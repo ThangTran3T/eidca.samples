@@ -1,0 +1,62 @@
+# eIDCA Integration Examples — .gitignore
+
+# =============================================
+# Sensitive Configuration
+# =============================================
+.env
+.env.local
+.env.*.local
+appsettings.Development.json
+local.properties
+Config.xcconfig
+*.keystore
+*.jks
+*.p12
+*.cer
+
+# =============================================
+# eIDCA SDK (Nhận từ nhóm kỹ thuật eIDCA, không commit)
+# =============================================
+win-app/src/sdk/libs/*.dll
+mobi-app/android/app/libs/eidca-*.aar
+mobi-app/ios/Sources/eIDCAExample/sdk/*.xcframework
+
+# =============================================
+# Build outputs
+# =============================================
+# Node.js / Web
+node_modules/
+dist/
+.vite/
+*.log
+
+# .NET / Windows
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Android
+mobi-app/android/.gradle/
+mobi-app/android/build/
+mobi-app/android/app/build/
+*.apk
+*.aab
+
+# iOS
+mobi-app/ios/build/
+mobi-app/ios/*.xcworkspace/xcuserdata/
+mobi-app/ios/Pods/
+mobi-app/ios/DerivedData/
+*.ipa
+*.dSYM.zip
+
+# =============================================
+# OS & Editor
+# =============================================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json
+*.swp
