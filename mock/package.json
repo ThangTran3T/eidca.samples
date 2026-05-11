@@ -1,0 +1,13 @@
+{
+  "name": "eidca-mock-server",
+  "version": "1.0.0",
+  "description": "Mock server cho eIDCA API — dùng chung cho web-app và win-app",
+  "type": "module",
+  "scripts": {
+    "start": "node mock-server.js",
+    "dev":   "node --watch mock-server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

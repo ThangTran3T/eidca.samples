@@ -60,7 +60,7 @@ web-app/
 
 ### Bước 1 — Kiểm tra đầu đọc
 ```
-App khởi động → socketClient.connect("ws://localhost:9090")
+App khởi động → socketClient.connect("https://192.168.5.1:8000")
              → Event "device:connect" → hiển thị trạng thái "Đầu đọc sẵn sàng"
              → Event "device:disconnect" → hiển thị "Vui lòng kết nối đầu đọc"
 ```
@@ -91,12 +91,12 @@ User chọn file PDF → SHA256 hash file
 
 ```env
 # eIDCA API
-VITE_EIDCA_API_BASE_URL=https://sandbox-api.eidca.vn/v1
+VITE_EIDCA_API_BASE_URL=https://api.eidca.vn
 VITE_EIDCA_CLIENT_ID=your_client_id_here
 VITE_EIDCA_CLIENT_SECRET=your_client_secret_here
 
 # SocketIO Bridge (local service trên máy người dùng)
-VITE_SOCKET_BRIDGE_URL=ws://localhost:9090
+VITE_SOCKET_BRIDGE_URL=https://192.168.5.1:8000
 
 # App
 VITE_APP_NAME=eIDCA Web Integration Demo
