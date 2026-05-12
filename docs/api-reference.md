@@ -265,7 +265,8 @@ Giá trị là một **JSON Array được stringify** (dạng chuỗi), mỗi p
 | | |
 |---|---|
 | **Endpoint** | `GET {{api-base-url}}/ca/api/sign/download/{{doc-id}}` |
-| **Header bổ sung** | `code`, `transaction_code`, `token_sign`, `os-type` *(optional)* |
+| **Ghi chú**  | `doc-id` là mã tài liệu lấy từ mảng `signed_docs` ở bước 2 `/ca/api/sign/signature` |
+| **Header bổ sung** | `x-api-key`, `code`, `transaction_code`, `token_sign`, `os-type` *(optional)* |
 
 **Response**
 
@@ -280,7 +281,7 @@ Giá trị là một **JSON Array được stringify** (dạng chuỗi), mỗi p
 | | |
 |---|---|
 | **Endpoint** | `GET {{api-base-url}}/ca/api/event/check-session` |
-| **Header bổ sung** | `code`, `transaction_code`, `token_sign`, `os-type` *(optional)* |
+| **Header bổ sung** | `x-api-key`, `code`, `transaction_code`, `token_sign`, `os-type` *(optional)* |
 
 **Response Body (JSON)**
 
@@ -492,6 +493,7 @@ Tương tự luồng ký văn bản cá nhân, khác ở **STEP 1** có thêm `c
 | | |
 |---|---|
 | **Endpoint** | `GET {{api-base-url}}/ca/apievent?session_id={session_id}` |
+| **Header bổ sung** | `x-api-key` |
 
 **Request**
 
@@ -558,6 +560,7 @@ Tương tự luồng ký văn bản cá nhân, khác ở **STEP 1** có thêm `c
 | | |
 |---|---|
 | **Endpoint** | `GET {{api-base-url}}/ca/api/file/{{filename}}` |
+| **Header bổ sung** | `x-api-key` |
 
 **Response**
 
@@ -582,8 +585,9 @@ Tương tự luồng ký văn bản cá nhân, khác ở **STEP 1** có thêm `c
 | | |
 |---|---|
 | **Endpoint** | `GET {{api-base-url}}/ca/api/sign/download/{{doc-id}}` |
+| **Header bổ sung** | `x-api-key` |
 
-*(Dùng chung endpoint với luồng ký cá nhân — STEP 3)*
+*(Dùng chung endpoint với luồng ký cá nhân — STEP 3. `doc-id` là mã tài liệu lấy từ bước 2 /ca/api/sign/signature)*
 
 ---
 
@@ -592,6 +596,7 @@ Tương tự luồng ký văn bản cá nhân, khác ở **STEP 1** có thêm `c
 | | |
 |---|---|
 | **Endpoint** | `GET {{api-base-url}}/ca/apievent?session_id={session_id}` |
+| **Header bổ sung** | `x-api-key` |
 
 *(Tương tự STEP 5 của luồng đăng ký QR Code)*
 
@@ -609,7 +614,7 @@ Tương tự luồng ký văn bản cá nhân, khác ở **STEP 1** có thêm `c
 | `POST` | `/ca/api/eid-company/check` | Kiểm tra trạng thái CTS TT | CTS Cá nhân TT |
 | `POST` | `/ca/api/sign/challenge` | Upload doc để ký (cá nhân) | Ký văn bản |
 | `POST` | `/ca/api/sign/signature` | Xác nhận ký (cá nhân / QR) | Ký văn bản / QR |
-| `GET` | `/ca/api/sign/download/{doc-id}` | Download file đã ký | Ký văn bản / QR |
+| `GET` | `/ca/api/sign/download/{doc-id}` | Download file đã ký (`doc-id` lấy từ bước 2 `/ca/api/sign/signature`) | Ký văn bản / QR |
 | `GET` | `/ca/api/event/check-session` | Kiểm tra phiên ký | Ký văn bản |
 | `POST` | `/ca/api/sign-company/challenge` | Upload doc để ký (cá nhân TT) | Ký văn bản TT |
 | `POST` | `/ca/api/sign-company/signature` | Xác nhận ký (cá nhân TT) | Ký văn bản TT |

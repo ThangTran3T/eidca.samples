@@ -23,7 +23,7 @@ import { Step3Check }     from "./Step3Check.js";
  * @param {object} opts.modeConfig   - { isMock, apiUrl, apiKey, partnerCode }
  * @param {function} [opts.getFrame] - Lấy frame webcam hiện tại
  */
-export function mountPersonalOnboarding(container, { socket, modeConfig, getFrame }) {
+export function mountPersonalOnboarding(container, { socket, modeConfig, getFrame, pauseWebcam, resumeWebcam }) {
   container.innerHTML = ""; // Xóa nội dung cũ
 
   // ── Shared state ─────────────────────────────────────────────────────────
@@ -50,6 +50,8 @@ export function mountPersonalOnboarding(container, { socket, modeConfig, getFram
 
     // Webcam helper
     getCurrentFrame: getFrame || (() => null),
+    pauseWebcam:     pauseWebcam || (() => {}),
+    resumeWebcam:    resumeWebcam || (() => {}),
   };
 
   // ── Render page header ───────────────────────────────────────────────────

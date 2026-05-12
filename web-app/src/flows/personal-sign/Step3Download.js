@@ -149,10 +149,12 @@ export class Step3Download {
       "// Method":       "GET",
       "// URL":          `/ca/api/sign/download/${firstDoc?.doc_id || "{doc-id}"}`,
       "// Headers": {
+        "Content-Type":     "application/json",
         "x-api-key":        "***",
         "code":             this._state.partnerCode,
         "transaction_code": this._state.transactionCode,
-        "token_sign":       this._state.tokenSign || this._state.tokenSigned,
+        "token_sign":       this._state.tokenSigned || this._state.tokenSign,
+        "os-type":          "Web",
       },
     });
   }
@@ -173,7 +175,7 @@ export class Step3Download {
       const blob = await downloadSignedDoc(
         doc.doc_id,
         this._state.transactionCode,
-        this._state.tokenSign || this._state.tokenSigned
+        this._state.tokenSigned || this._state.tokenSign
       );
 
       // Hiển thị response info

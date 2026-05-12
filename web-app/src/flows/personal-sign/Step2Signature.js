@@ -198,13 +198,23 @@ export class Step2Signature {
   }
 
   _captureSelfie() {
-    const frame = this._state.getCurrentFrame?.();
-    if (frame) {
-      this._state.selfieBase64 = frame;
-      this._el.querySelector("#chk-selfie").textContent = "✅";
-      this._tryAutoSend();
+    if (this._state.isWebcamPaused) {
+      this._state.resumeWebcam?.();
+      this._state.isWebcamPaused = false;
+      this._state.selfieBase64 = null;
+      
+      const btn = this._el.querySelector("#s2-btn-selfie");
+      if (btn) btn.innerHTML = "📷 Chụp Selfie";
+      this._el.querySelector("#chk-selfie").textContent = "⬜";
+      
+      this._el.querySelector("#s2-btn-send").disabled = true;
     } else {
-      alert("Webcam chưa có ảnh. Vui lòng kiểm tra kết nối.");
+      const frame = this._state.getCurrentFrame?.();
+      if (frame) {
+        this.setSelfie(frame);
+      } else {
+        alert("Webcam chưa có ảnh. Vui lòng kiểm tra kết nối.");
+      }
     }
   }
 
@@ -224,7 +234,7 @@ export class Step2Signature {
       transaction_code: transactionCode,
       token_sign:       tokenSign,
       info: {
-        image: selfieBase64 ? selfieBase64.substring(0, 40) + "..." : "...",
+        image: selfieBase64 || "...",
       },
       doc_signs: (docs || []).map((doc) => ({
         doc_id:    doc.doc_id,
@@ -289,6 +299,10 @@ export class Step2Signature {
   setSelfie(base64) {
     this._state.selfieBase64 = base64;
     this._el.querySelector("#chk-selfie").textContent = "✅";
+    this._state.pauseWebcam?.();
+    this._state.isWebcamPaused = true;
+    const btn = this._el.querySelector("#s2-btn-selfie");
+    if (btn) btn.innerHTML = "🔄 Chụp lại Selfie";
     this._tryAutoSend();
   }
 }

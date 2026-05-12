@@ -20,7 +20,7 @@ import { Step1Upload }     from "./Step1Upload.js";
 import { Step2Signature }  from "./Step2Signature.js";
 import { Step3Download }   from "./Step3Download.js";
 
-export function mountPersonalSign(container, { socket, modeConfig, getFrame }) {
+export function mountPersonalSign(container, { socket, modeConfig, getFrame, pauseWebcam, resumeWebcam }) {
   container.innerHTML = "";
 
   // ── Shared state ──────────────────────────────────────────────────────────
@@ -43,6 +43,8 @@ export function mountPersonalSign(container, { socket, modeConfig, getFrame }) {
     // Helpers
     isMock:          modeConfig.isMock,
     getCurrentFrame: getFrame || (() => null),
+    pauseWebcam:     pauseWebcam || (() => {}),
+    resumeWebcam:    resumeWebcam || (() => {}),
   };
 
   // ── Hero ─────────────────────────────────────────────────────────────────

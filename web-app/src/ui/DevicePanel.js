@@ -18,6 +18,19 @@ export class DevicePanel {
     this._socket = socket;
     this._el = null;
     this._lastFrame = null;
+    this._isPaused = false;
+  }
+
+  pauseWebcam() {
+    this._isPaused = true;
+    this._socket.pauseCam?.();
+  }
+  
+  resumeWebcam() {
+    this._isPaused = false;
+    this._lastFrame = null; // Clear old frame so we don't capture it again immediately
+    this._setStatus("cam", "connecting", "Đang kết nối...");
+    this._socket.resumeCam?.();
   }
 
   mount() {
@@ -100,6 +113,10 @@ export class DevicePanel {
       this._setStatus("cam", "connected", "Đang stream");
     };
     socket.on.camDisconnect = () => {
+      if (this._isPaused) {
+        this._setStatus("cam", "paused", "Đã dừng");
+        return;
+      }
       this._setStatus("cam", "error", "Mất kết nối");
       this._el.querySelector("#webcam-img")?.classList.add("hidden");
       this._el.querySelector("#webcam-placeholder")?.classList.remove("hidden");
@@ -109,6 +126,8 @@ export class DevicePanel {
     let _lastRender = 0;
     socket.on.webcamFrame = (frameData) => {
       if (!frameData?.data) return;
+      if (this._isPaused) return; // Pause frame updates if requested
+
       this._lastFrame = frameData.data;
       const now = Date.now();
       if (now - _lastRender < 200) return;
@@ -125,6 +144,7 @@ export class DevicePanel {
   /** Cập nhật socket khi đổi mode */
   updateSocket(newSocket) {
     // Reset trạng thái UI
+    this._isPaused = false;
     this._setStatus("nfc", "connecting", "Đang kết nối...");
     this._setStatus("cam", "connecting", "Đang kết nối...");
     this._el.querySelector("#card-info-wrap")?.classList.add("hidden");

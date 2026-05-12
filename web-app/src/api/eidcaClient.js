@@ -213,13 +213,22 @@ export async function downloadSignedDoc(docId, transactionCode, tokenSign) {
   const url = `${baseUrl}/ca/api/sign/download/${docId}`;
   const res = await fetch(url, {
     headers: {
+      "Content-Type":    "application/json",
       "x-api-key":       apiKey,
       "code":            partnerCode,
       "transaction_code":transactionCode,
       "token_sign":      tokenSign,
+      "os-type":         "Web",
     },
   });
-  if (!res.ok) throw new Error(`Download failed: HTTP ${res.status}`);
+  if (!res.ok) {
+    let errorMsg = `Download failed: HTTP ${res.status}`;
+    try {
+      const text = await res.text();
+      errorMsg += ` - ${text}`;
+    } catch (e) {}
+    throw new Error(errorMsg);
+  }
   return res.blob();
 }
 

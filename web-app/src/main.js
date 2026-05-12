@@ -172,6 +172,8 @@ function _navigateTo(path, mainEl, config) {
     socket,
     modeConfig: config,
     getFrame: () => devicePanel?.getCurrentFrame(),
+    pauseWebcam: () => devicePanel?.pauseWebcam(),
+    resumeWebcam: () => devicePanel?.resumeWebcam(),
   });
 }
 

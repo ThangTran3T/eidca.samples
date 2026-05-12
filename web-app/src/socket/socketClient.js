@@ -100,6 +100,18 @@ export function createRealSocket() {
       camSocket?.disconnect();
     },
 
+    pauseCam() {
+      camSocket?.disconnect();
+    },
+
+    resumeCam() {
+      if (!camSocket) {
+        _connectCam();
+      } else if (camSocket.disconnected) {
+        camSocket.connect();
+      }
+    },
+
     /**
      * Ký Active Authentication trên chip thẻ CCCD.
      * Kết quả trả về qua on.aaResponse (event /event với id:7).

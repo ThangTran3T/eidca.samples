@@ -157,6 +157,8 @@ export class Step1Upload {
                 <label class="form-label">Bố cục (template)</label>
                 <select class="form-input" id="sp-template">
                   <option value="right">right — logo phải</option>
+                  <option value="left">left — logo trái</option>
+                  <option value="text_only">text_only — không dùng logo</option>
                 </select>
               </div>
             </div>
@@ -218,6 +220,13 @@ export class Step1Upload {
     // Nếu CCCD đã được điền sẵn (từ NFC) → bật nút ngay
     if (cccdInput.value.length === 12) {
       this._el.querySelector("#s1-btn-upload").disabled = false;
+    }
+
+    // Cập nhật payload khi thay đổi sign_props
+    const signPropsContainer = this._el.querySelector("details");
+    if (signPropsContainer) {
+      signPropsContainer.addEventListener("input", () => this._updateRequestPanel());
+      signPropsContainer.addEventListener("change", () => this._updateRequestPanel());
     }
 
     // Nút upload

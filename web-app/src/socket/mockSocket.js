@@ -176,6 +176,16 @@ export function createMockSocket() {
       on.nfcDisconnect();
     },
 
+    pauseCam() {
+      _stopWebcam();
+    },
+
+    resumeCam() {
+      if (!_camConnected) {
+        _startWebcam();
+      }
+    },
+
     /**
      * Gửi lệnh ký Active Authentication lên chip thẻ.
      * Tương đương: socket.emit('/get_aa', { clientId, challenge })

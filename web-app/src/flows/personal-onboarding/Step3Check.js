@@ -93,7 +93,7 @@ export class Step3Check {
     this._el.querySelector("#poll-progress").classList.remove("hidden");
     this._el.querySelector("#s3-btn-stop").classList.remove("hidden");
 
-    const intervalSec = Math.round((this._state.interval || 3000) / 1000);
+    const intervalSec = 5; // Cố định 5s
     this._el.querySelector("#poll-interval-val").textContent = intervalSec;
 
     this._startPoll();
@@ -101,7 +101,7 @@ export class Step3Check {
 
   _startPoll() {
     this._poll(); // Gọi ngay lần đầu
-    this._pollTimer = setInterval(() => this._poll(), this._state.interval || 3000);
+    this._pollTimer = setInterval(() => this._poll(), 5000);
   }
 
   _stopPoll() {
@@ -110,6 +110,27 @@ export class Step3Check {
 
   /** Một lần poll /check */
   async _poll() {
+    if (this._pollCount >= 100) {
+      this._stopPoll();
+      const badge = this._el.querySelector("#s3-badge");
+      badge.className = "step-status-badge badge-error";
+      badge.textContent = "Thử lại";
+      badge.style.cursor = "pointer";
+      
+      badge.onclick = () => {
+        badge.onclick = null;
+        badge.style.cursor = "";
+        badge.className = "step-status-badge badge-processing";
+        badge.textContent = "Đang xử lý";
+        this._pollCount = 0;
+        this._startPoll();
+      };
+
+      this._el.querySelector("#poll-count").textContent = `Vượt quá giới hạn (100 lần)`;
+      this._codePanels.setResponse({ success: false, error: { code: "TIMEOUT", message: "Quá thời gian chờ cấp CTS. Vui lòng thử lại." }, data: null }, "error");
+      return;
+    }
+
     this._pollCount++;
     this._el.querySelector("#poll-count").textContent = `Poll #${this._pollCount}`;
 

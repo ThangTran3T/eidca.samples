@@ -73,6 +73,18 @@ export class Step2Signature {
               <div class="device-sub">Chụp tự động từ webcam</div>
             </div>
           </div>
+
+          <!-- Thông tin liên hệ -->
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <div style="flex:1;">
+              <label style="display:block;font-size:0.8rem;margin-bottom:4px;color:var(--text-secondary);">Email liên hệ</label>
+              <input type="email" id="s2-input-email" placeholder="Nhập email" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-card-2);color:var(--text-primary);">
+            </div>
+            <div style="flex:1;">
+              <label style="display:block;font-size:0.8rem;margin-bottom:4px;color:var(--text-secondary);">Số điện thoại</label>
+              <input type="tel" id="s2-input-phone" placeholder="Nhập SĐT" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-card-2);color:var(--text-primary);">
+            </div>
+          </div>
         </div>
 
         <!-- Nút thủ công (nếu cần) -->
@@ -104,6 +116,16 @@ export class Step2Signature {
     this._el.querySelector("#s2-btn-aa").addEventListener("click", () => this._triggerAA());
     this._el.querySelector("#s2-btn-selfie").addEventListener("click", () => this._captureSelfie());
     this._el.querySelector("#s2-btn-send").addEventListener("click", () => this._run());
+
+    // Gắn sự kiện input email/phone
+    this._el.querySelector("#s2-input-email").addEventListener("input", (e) => {
+      this._state.email = e.target.value;
+      if (!this._el.querySelector("#s2-btn-send").disabled) this._updateRequestPanel();
+    });
+    this._el.querySelector("#s2-input-phone").addEventListener("input", (e) => {
+      this._state.phone = e.target.value;
+      if (!this._el.querySelector("#s2-btn-send").disabled) this._updateRequestPanel();
+    });
   }
 
   /**
@@ -156,14 +178,25 @@ export class Step2Signature {
 
   /** Chụp frame ảnh từ webcam */
   _captureSelfie() {
-    // Lấy frame hiện tại từ DevicePanel (qua state)
-    const frame = this._state.getCurrentFrame?.() || this._state.selfieBase64;
-    if (frame) {
-      this._state.selfieBase64 = frame;
-      this._el.querySelector("#chk-selfie").textContent = "✅";
-      this._tryAutoSend();
+    if (this._state.isWebcamPaused) {
+      // Đang pause -> resume để chụp lại
+      this._state.resumeWebcam?.();
+      this._state.isWebcamPaused = false;
+      this._state.selfieBase64 = null;
+      
+      const btn = this._el.querySelector("#s2-btn-selfie");
+      if (btn) btn.innerHTML = "📷 Chụp Selfie";
+      this._el.querySelector("#chk-selfie").textContent = "⬜";
+      
+      this._el.querySelector("#s2-btn-send").disabled = true;
     } else {
-      alert("Webcam chưa có ảnh. Vui lòng kiểm tra kết nối webcam.");
+      // Lấy frame hiện tại từ DevicePanel (qua state)
+      const frame = this._state.getCurrentFrame?.();
+      if (frame) {
+        this.setSelfie(frame);
+      } else {
+        alert("Webcam chưa có ảnh. Vui lòng kiểm tra kết nối webcam.");
+      }
     }
   }
 
@@ -204,7 +237,7 @@ export class Step2Signature {
         permanent_district:   "Hà Nội",
         phone:                this._state.phone || "",
         email:                this._state.email || "",
-        image:                selfieBase64 ? selfieBase64.substring(0, 40) + "..." : "...",
+        image:                selfieBase64 || "...",
         hand_sig_image_base64:"...",
       },
       signature: signature || "...",
@@ -290,6 +323,10 @@ export class Step2Signature {
   setSelfie(base64) {
     this._state.selfieBase64 = base64;
     this._el.querySelector("#chk-selfie").textContent = "✅";
+    this._state.pauseWebcam?.();
+    this._state.isWebcamPaused = true;
+    const btn = this._el.querySelector("#s2-btn-selfie");
+    if (btn) btn.innerHTML = "🔄 Chụp lại Selfie";
     this._tryAutoSend();
   }
 }
