@@ -449,3 +449,116 @@ export const MOCK_ERROR_PROCESSING_FAILED = {
   error: { code: "ERROR_CA_001", message: "Cấp CTS thất bại. Thông tin NFC không hợp lệ." },
   data: null,
 };
+
+// ─────────────────────────────────────────────
+// DEVICE MOCKS — Thông qua Socket.IO (NFC Reader & Webcam)
+// ─────────────────────────────────────────────
+
+/** 1.1 Lấy thông tin thiết bị (getInfoDevice) */
+export const MOCK_DEVICE_INFO_RESPONSE = {
+  version: "1.1",
+  serial_nfc: "00123000012",
+  serial_device: "0022300111",
+  date: "2026-05-12T02:39:59.852Z",
+};
+
+/** 1.2 Sự kiện đọc thẻ (Card Insert) */
+
+// A. Đọc thẻ thành công - Lấy dữ liệu Text (id: 2)
+export const MOCK_DEVICE_EVENT_PERSONAL_INFO = {
+  id: 2,
+  message: "read card successfully!",
+  data: {
+    idCode: MOCK_USERS[0].id_number,
+    oldIdCode: "123456789",
+    personName: MOCK_USERS[0].full_name,
+    dateOfBirth: "15051990",
+    gender: "Nam",
+    nationality: "Việt Nam",
+    race: "Kinh",
+    religion: "Không",
+    originPlace: MOCK_USERS[0].permanent_district,
+    residencePlace: MOCK_USERS[0].permanent_city,
+    personalIdentification: "Sẹo nhỏ dưới mắt trái",
+    issueDate: "20032021",
+    expiryDate: "15052030",
+    fatherName: "Nguyễn Văn B",
+    motherName: "Trần Thị C",
+    wifeName: "",
+    qr: "001087012345|123456789|Nguyễn Văn An|15051990|Nam|Hà Nội|20032021",
+  },
+};
+
+// B. Đọc thẻ thành công - Lấy dữ liệu Ảnh & Raw Phân vùng (id: 4)
+export const MOCK_DEVICE_EVENT_AVATAR_IMAGE = {
+  id: 4,
+  data: {
+    img_data: MOCK_SELFIE_BASE64,
+    dg1: MOCK_NFC_RAW_DATA.dg1,
+    dg2: MOCK_NFC_RAW_DATA.dg2,
+    dg13: MOCK_NFC_RAW_DATA.dg13,
+    dg14: "ZGcxNERhdGFCYXNlNjQ...",
+    dg15: MOCK_NFC_RAW_DATA.dg15,
+    sod: MOCK_NFC_RAW_DATA.sod,
+  },
+};
+
+// C. Đọc thẻ thành công - Tách chuỗi DS_CERT (id: 5)
+export const MOCK_DEVICE_EVENT_DS_CERT = {
+  id: 5,
+  data: {
+    CA: "1",
+    AA: {
+      aa_signature: "",
+    },
+    PA: {
+      hash_dg1: "aGFzaF9kZzE=",
+      hash_dg2: "aGFzaF9kZzI=",
+      hash_dg13: "aGFzaF9kZzEz",
+      hash_dg14: "aGFzaF9kZzE0",
+      hash_dg15: "aGFzaF9kZzE1",
+      cert: "MIIFaDCCBBCgAwIBAgIQ...",
+      sod: MOCK_NFC_RAW_DATA.sod,
+    },
+  },
+};
+
+// D. Quét thẻ thất bại (id: 3)
+export const MOCK_DEVICE_EVENT_ERROR = {
+  id: 3,
+  message: "Thẻ không hợp lệ hoặc đọc lỗi.",
+};
+
+/** 1.3 Ký số trên thẻ Căn cước (Active Authentication) */
+
+// Lệnh gửi từ client để yêu cầu ký (event /get_aa)
+export const MOCK_DEVICE_AA_REQUEST = {
+  clientId: "client_demo_1",
+  challenge: "Y2hhbGxlbmdlX2RlbW8=",
+};
+
+// Phản hồi khi ký thành công (id: 7)
+export const MOCK_DEVICE_AA_RESPONSE = {
+  id: 7,
+  data: {
+    aa_signature: "c2lnbmF0dXJlX2FhX2RlbW8=",
+    aa_challege: "Y2hhbGxlbmdlX2RlbW8=",
+  },
+};
+
+/** 1.4 Đọc lại thông tin thẻ (Re-read) */
+
+// Lệnh gửi từ client để đọc lại (event /input_data)
+export const MOCK_DEVICE_REREAD_REQUEST = {
+  idCode: MOCK_USERS[0].id_number,
+  dateOfBirth: "15051990",
+  expiryDate: "15052030",
+  clientId: "client_demo_1",
+};
+
+/** 2. Service Đọc Webcam */
+
+// Lắng nghe dữ liệu (event /image)
+export const MOCK_WEBCAM_IMAGE_EVENT = {
+  data: MOCK_SELFIE_BASE64,
+};
