@@ -168,13 +168,50 @@
 
 | Tham số | Kiểu | Mô tả |
 |---|---|---|
-| `documents` | File | PNG/JPG/XML/PDF/DOC, tối đa 100MB |
+| `documents` | File | PDF, tối đa 10MB |
 | `id_number` | String | Số định danh cá nhân người ký |
-| `sign_props` | String | Thông tin tùy chỉnh chữ ký trên PDF |
+| `sign_props` | String | JSON Array (stringify) — Thông tin tùy chỉnh vị trí & hình thức chữ ký trên PDF. Xem chi tiết bên dưới. |
 | `expire_at` | String | *(Optional)* Thời gian hết hạn chữ ký |
 | `doc_name` | String | *(Optional)* Tên thay thế tài liệu |
 | `session_timeout` | String | *(Optional)* `ONE_HOUR` / `TWO_HOURS` / `FOUR_HOURS` / `EIGHT_HOURS` / `TWELVE_HOURS` / `FULL_DAY` |
 | `security_level` | String | `LEVEL_2` (ký với CTS công cộng) |
+
+**Chi tiết tham số `sign_props`**
+
+Giá trị là một **JSON Array được stringify** (dạng chuỗi), mỗi phần tử trong array tương ứng với **một vị trí chữ ký** trên tài liệu PDF.
+
+*Ví dụ giá trị gửi lên:*
+
+```
+[{\"page\":1,\"lLx\":65,\"lLy\":320,\"width\":260,\"height\":90,\"template\":\"right\",\"show_info\":[\"reason\",\"location\",\"contact\",\"name\",\"org\",\"date\"],\"location\":\"HCM city\",\"location_label\":\"Tại: Phòng giao dịch\",\"reason\":\"Ký test\",\"reason_label\":\"\",\"contact\":\"Giám đốc\",\"contact_label\":\"Email: eidca.vn@gmail.com\",\"date_label\":\"Ngày ký\",\"text_color\":\"#0000ff\",\"font_size\":11,\"sign_visibility\":\"shown\",\"watermark_pos\":\"center\",\"watermark_img_b64\":\"\",\"hand_sig_img_b64\":\"\"}]
+```
+
+*Cấu trúc một phần tử trong array:*
+
+| Trường | Kiểu | Mô tả |
+|---|---|---|
+| `page` | Number | Số trang đặt chữ ký (bắt đầu từ `1`) |
+| `lLx` | Number | Tọa độ X góc dưới trái của vùng chữ ký (đơn vị: point PDF) |
+| `lLy` | Number | Tọa độ Y góc dưới trái của vùng chữ ký (đơn vị: point PDF) |
+| `width` | Number | Chiều rộng vùng chữ ký (đơn vị: point PDF) |
+| `height` | Number | Chiều cao vùng chữ ký (đơn vị: point PDF) |
+| `template` | String | Bố cục hiển thị: `"right"` — logo bên phải, text bên trái |
+| `show_info` | Array\<String\> | Danh sách thông tin hiển thị trong ô chữ ký. Các giá trị hợp lệ: `"reason"`, `"location"`, `"contact"`, `"name"`, `"org"`, `"date"` |
+| `location` | String | Giá trị địa điểm ký (ví dụ: `"HCM city"`) |
+| `location_label` | String | Nhãn hiển thị trước địa điểm (ví dụ: `"Tại: Phòng giao dịch"`) |
+| `reason` | String | Lý do ký (ví dụ: `"Ký test"`) |
+| `reason_label` | String | Nhãn hiển thị trước lý do (để trống nếu không cần) |
+| `contact` | String | Thông tin liên hệ người ký (ví dụ: `"Giám đốc"`) |
+| `contact_label` | String | Nhãn hiển thị trước contact (ví dụ: `"Email: eidca.vn@gmail.com"`) |
+| `date_label` | String | Nhãn hiển thị trước ngày ký (ví dụ: `"Ngày ký"`) |
+| `text_color` | String | Màu chữ trong ô chữ ký (hex, ví dụ: `"#0000ff"`) |
+| `font_size` | Number | Cỡ chữ trong ô chữ ký (ví dụ: `11`) |
+| `sign_visibility` | String | Hiển thị ô chữ ký: `"shown"` — hiển thị \| `"hidden"` — ẩn (chữ ký nhúng không hiển thị) |
+| `watermark_pos` | String | Vị trí watermark: `"center"` \| `"top-left"` \| `"top-right"` \| `"bottom-left"` \| `"bottom-right"` |
+| `watermark_img_b64` | String | Ảnh watermark dạng Base64 (để trống nếu không dùng) |
+| `hand_sig_img_b64` | String | Ảnh chữ ký tay dạng Base64 (để trống nếu không dùng) |
+
+> **Lưu ý:** Hệ thống tọa độ PDF gốc nằm ở góc dưới trái trang. `lLx` / `lLy` là tọa độ của góc dưới trái vùng chữ ký tính từ gốc đó.
 
 **Response Body (JSON)**
 

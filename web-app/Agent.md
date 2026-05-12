@@ -1,6 +1,8 @@
 # Agent.md — Web App Integration Example
 
 > **Dành cho AI Agent**: File này cung cấp toàn bộ context cần thiết để làm việc hiệu quả trong project `web-app`.
+> Sử dụng lài liệu từ file `device-reference.md` để hiểu rõ các events và cách sử dụng của SocketIO Bridge Service.
+> Sử dụng lài liệu từ file `api-reference.md` để hiểu rõ các API calls và cách sử dụng của eIDCA API.
 
 ---
 
@@ -67,22 +69,24 @@ App khởi động → socketClient.connect("https://192.168.5.1:8000")
 
 ### Bước 2 — Đăng ký chữ ký số
 ```
-User nhấn "Đăng ký" → emit "card:read" (SocketIO)
-                    → Event "card:inserted" → đọc CCCD data
-                    → POST /register/initiate (eIDCA API)
-                    → POST /register/confirm với cccd_data
-                    → Lưu certificate_id
+User nhấn "Đăng ký" → Yêu cầu cắm thẻ vào đầu đọc
+                    → Đọc số Căn cước công dân từ getPersonalInfo
+                    → POST /ca/api/eid-personal/challenge request với số Căn cước công dân lấy mã challenge
+                    → Ký dữ liệu challenge lấy từ POST /ca/api/eid-personal/challenge với sendSignalMessage
+                    → Chụp ảnh từ webcam với getFaceImage
+                    → POST /ca/api/eid-personal/signature với đầy đủ thông tin cần thiết theo API Reference
+                    → POST /ca/api/eid-personal/check kiểm tra trạng thái và kích hoạt chữ ký số
+                    → Thông báo kết quả đăng ký
 ```
 
 ### Bước 3 — Ký tài liệu
 ```
-User chọn file PDF → SHA256 hash file
-                  → POST /sign/prepare (eIDCA API)
-                  → emit "card:read" (SocketIO) — xác thực CCCD
-                  → User nhập PIN
-                  → POST /sign/confirm
-                  → Nhúng signature vào PDF
-                  → Download PDF đã ký
+User chọn file PDF → Yêu cầu cắm thẻ vào đầu đọc
+                  → Gửi lệnh /ca/api/sign/challenge request với số Căn cước công dân lấy mã challenge
+                  → Ký dữ liệu challenge lấy từ POST /ca/api/sign/challenge với sendSignalMessage
+                  → Chụp ảnh từ webcam với getFaceImage
+                  → POST /ca/api/sign/signature với đầy đủ thông tin cần thiết theo API Reference
+                  → GET /ca/api/sign/download/{{doc_id}} để download PDF đã ký với doc_id là documentId từ /ca/api/sign/signature response
 ```
 
 ---
@@ -91,16 +95,8 @@ User chọn file PDF → SHA256 hash file
 
 ```env
 # eIDCA API
-VITE_EIDCA_API_BASE_URL=https://api.eidca.vn
-VITE_EIDCA_CLIENT_ID=your_client_id_here
-VITE_EIDCA_CLIENT_SECRET=your_client_secret_here
-
-# SocketIO Bridge (local service trên máy người dùng)
-VITE_SOCKET_BRIDGE_URL=https://192.168.5.1:8000
-
-# App
-VITE_APP_NAME=eIDCA Web Integration Demo
-VITE_APP_ENV=development
+api-base-url=https://api.eidca.vn
+x-api-key=your_api_key
 ```
 
 ---
@@ -130,5 +126,6 @@ VITE_APP_ENV=development
 - `../docs/api-reference.md` — eIDCA API Reference
 - `../docs/authentication-flow.md` — Chi tiết luồng xác thực
 - `../docs/architecture.md` — Kiến trúc tổng quan
+- `../docs/device-reference.md` — Tham khảo kết nối thiết bị
 - [socket.io-client docs](https://socket.io/docs/v4/client-api/)
 - [Web Crypto API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API)

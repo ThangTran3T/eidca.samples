@@ -69,15 +69,7 @@ SocketIO bridge chạy như một **local service** trên máy tính người d�
 
 ### Events SocketIO quan trọng:
 
-| Event | Hướng | Mô tả |
-|-------|-------|-------|
-| `device:connect` | Server → Client | Đầu đọc đã kết nối |
-| `device:disconnect` | Server → Client | Đầu đọc ngắt kết nối |
-| `card:inserted` | Server → Client | Thẻ CCCD đã được đặt vào |
-| `card:removed` | Server → Client | Thẻ CCCD đã được rút ra |
-| `card:read` | Client → Server | Yêu cầu đọc dữ liệu thẻ |
-| `card:data` | Server → Client | Dữ liệu chip CCCD (encrypted) |
-| `card:error` | Server → Client | Lỗi đọc thẻ |
+Sử dụng lài liệu từ file `device-reference.md` để hiểu rõ các events và cách sử dụng của SocketIO Bridge Service.
 
 ## 4. Tích hợp NFC SDK (Mobile)
 
