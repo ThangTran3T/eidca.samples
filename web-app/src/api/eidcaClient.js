@@ -216,8 +216,8 @@ export async function downloadSignedDoc(docId, transactionCode, tokenSign) {
       "Content-Type":    "application/json",
       "x-api-key":       apiKey,
       "code":            partnerCode,
-      "transaction_code":transactionCode,
-      "token_sign":      tokenSign,
+      "transaction-code":transactionCode,
+      "token-sign":      tokenSign,
       "os-type":         "Web",
     },
   });

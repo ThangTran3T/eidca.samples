@@ -266,7 +266,7 @@ Giá trị là một **JSON Array được stringify** (dạng chuỗi), mỗi p
 |---|---|
 | **Endpoint** | `GET {{api-base-url}}/ca/api/sign/download/{{doc-id}}` |
 | **Ghi chú**  | `doc-id` là mã tài liệu lấy từ mảng `signed_docs` ở bước 2 `/ca/api/sign/signature` |
-| **Header bổ sung** | `x-api-key`, `code`, `transaction_code`, `token_sign`, `os-type` *(optional)* |
+| **Header bổ sung** | `x-api-key`, `code`, `transaction-code`, `token-sign`, `os-type` *(optional)* |
 
 **Response**
 
@@ -281,7 +281,7 @@ Giá trị là một **JSON Array được stringify** (dạng chuỗi), mỗi p
 | | |
 |---|---|
 | **Endpoint** | `GET {{api-base-url}}/ca/api/event/check-session` |
-| **Header bổ sung** | `x-api-key`, `code`, `transaction_code`, `token_sign`, `os-type` *(optional)* |
+| **Header bổ sung** | `x-api-key`, `code`, `transaction-code`, `token-sign`, `os-type` *(optional)* |
 
 **Response Body (JSON)**
 

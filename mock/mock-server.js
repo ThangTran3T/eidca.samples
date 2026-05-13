@@ -21,7 +21,7 @@ function send(res, status, body) {
   res.writeHead(status, {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type, x-api-key, code, transaction_code, token_sign, token_signature, os-type",
+    "Access-Control-Allow-Headers": "Content-Type, x-api-key, code, transaction-code, token-sign, token_signature, os-type",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   });
   res.end(JSON.stringify(body, null, 2));
