@@ -29,8 +29,8 @@ eIDCA/
 
 | # | Project | Nền tảng | Kết nối thiết bị | Ngôn ngữ |
 |---|---------|----------|-----------------|----------|
-| 1 | **web-app** | Trình duyệt Web | SocketIO (đầu đọc 3TE4/HN212) | JavaScript / TypeScript |
-| 2 | **win-app** | Windows Desktop | SocketIO hoặc C# SDK (đầu đọc 3TE4/HN212) | C# / .NET |
+| 1 | **web-app** | Trình duyệt Web | SocketIO (đầu đọc 3TE4/AE09/HN212) | JavaScript / TypeScript |
+| 2 | **win-app** | Windows Desktop | SocketIO hoặc C# SDK (đầu đọc 3TE4/AE09/HN212) | C# / .NET |
 | 3 | **mobi-app** | iOS & Android | NFC tích hợp, iOS/Android SDK | Swift / Kotlin |
 
 ---
@@ -40,7 +40,7 @@ eIDCA/
 - **Tài khoản đối tác eIDCA** — Cần có `client_id`, `client_secret`, và `api_base_url` do eIDCA cấp.
 - **Môi trường Sandbox/Production** — Xem chi tiết trong từng thư mục project.
 - **Thiết bị đọc thẻ**:
-  - Web & Win: Đầu đọc **3TE4** hoặc **HN212** có hỗ trợ CCCD chip.
+  - Web & Win: Đầu đọc **3TE4**, **AE09** hoặc **HN212** có hỗ trợ CCCD chip.
   - Mobile: Thiết bị iOS/Android **có hỗ trợ NFC** (iPhone 7+, Android tầm trung trở lên).
 
 ---
