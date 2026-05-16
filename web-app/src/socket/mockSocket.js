@@ -206,5 +206,13 @@ export function createMockSocket() {
 
     get isNfcConnected() { return _nfcConnected; },
     get isCamConnected() { return _camConnected; },
+
+    /**
+     * Kích hoạt giả lập đọc thẻ thủ công.
+     * Gọi khi flow cần NFC data nhưng đã bỏ lỡ sự kiện khởi động.
+     */
+    simulateCardRead() {
+      _simulateCardRead();
+    },
   };
 }

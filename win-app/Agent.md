@@ -93,16 +93,16 @@ App khởi động → CardReaderSdk.Initialize(portName)
 ```json
 {
   "EidcaApi": {
-    "BaseUrl": "https://sandbox-api.eidca.vn/v1",
-    "ClientId": "your_client_id",
-    "ClientSecret": "your_client_secret",
+    "BaseUrl": "http://localhost:3001",
+    "ApiKey": "MOCK_API_KEY_DEMO",
+    "PartnerCode": "PARTNER_DEMO_001",
     "TimeoutSeconds": 30
   },
   "CardReader": {
     "Mode": "SocketIO",
-    "SocketBridgeUrl": "ws://localhost:9090",
-    "SdkDllPath": "libs/EidcaCardReaderSdk.dll",
-    "SdkPortName": "COM3"
+    "SocketBridgeUrl": "https://192.168.5.1:8000",
+    "WebcamUrl": "https://192.168.5.1:9000",
+    "SdkDllPath": "libs/EidcaCardReaderSdk.dll"    
   },
   "Logging": {
     "LogLevel": "Information",

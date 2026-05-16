@@ -16,6 +16,8 @@ import { createMockSocket }         from "./socket/mockSocket.js";
 import { createRealSocket }         from "./socket/socketClient.js";
 import { mountPersonalOnboarding }  from "./flows/personal-onboarding/index.js";
 import { mountPersonalSign }        from "./flows/personal-sign/index.js";
+import { mountCompanyOnboarding }   from "./flows/company-onboarding/index.js";
+import { mountCompanySign }         from "./flows/company-sign/index.js";
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 // Thêm luồng mới vào đây
@@ -38,15 +40,15 @@ const ROUTES = [
     path: "/personal-company-onboarding",
     label: "Đăng ký CTS Tổ chức",
     badge: "3 bước",
-    mount: null,
-    available: false,
+    mount: mountCompanyOnboarding,
+    available: true,
   },
   {
     path: "/personal-company-sign",
     label: "Ký số Tổ chức",
     badge: "3 bước",
-    mount: null,
-    available: false,
+    mount: mountCompanySign,
+    available: true,
   },
 ];
 
