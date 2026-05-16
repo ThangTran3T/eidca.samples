@@ -1,0 +1,32 @@
+<UserControl x:Class="eIDCA.WinApp.Views.PersonalSign.Step1UploadView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls">
+    <StackPanel>
+        <TextBlock Text="Bước 1 — Upload tài liệu" Style="{StaticResource H2}"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="140"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="#1e1e3a" CornerRadius="6" Padding="12,8" Margin="0,0,8,0">
+                <TextBlock Text="{Binding SelectedFileName}" Style="{StaticResource Body}"
+                           TextTrimming="CharacterEllipsis"/>
+            </Border>
+            <Button Grid.Column="1" Content="📂 Chọn file PDF" Style="{StaticResource SecondaryButton}"
+                    Command="{Binding BrowseFileCommand}"/>
+        </Grid>
+        <StackPanel>
+            <TextBlock Text="Số CCCD" Style="{StaticResource Caption}"/>
+            <TextBox Text="{Binding IdNumber, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource InputBox}"/>
+        </StackPanel>
+        <TextBlock Text="{Binding StatusMsg}" Style="{StaticResource StatusLabel}"
+                   Visibility="{Binding StatusMsg, Converter={StaticResource EmptyToHiddenConverter}}"/>
+        <TextBlock Text="{Binding DocsInfo}" Style="{StaticResource Body}"
+                   Visibility="{Binding DocsInfo, Converter={StaticResource EmptyToHiddenConverter}}"/>
+        <Button Content="📤 Upload &amp; Lấy Challenge" Style="{StaticResource PrimaryButton}"
+                Command="{Binding UploadCommand}" HorizontalAlignment="Left" Padding="18,9"/>
+        <controls:CodePanelControl DataContext="{Binding CodePanel}"/>
+    </StackPanel>
+</UserControl>

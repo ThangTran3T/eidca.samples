@@ -1,0 +1,42 @@
+<UserControl x:Class="eIDCA.WinApp.Views.PersonalOnboarding.Step3CheckView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls">
+    <StackPanel>
+        <TextBlock Text="Bước 3 — Kiểm tra cấp CTS" Style="{StaticResource H2}"/>
+
+        <Border Style="{StaticResource CardPanel}" Padding="16">
+            <StackPanel>
+                <TextBlock Text="{Binding StatusMsg}" Style="{StaticResource StatusLabel}"/>
+
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding IsPolling, Converter={StaticResource BoolToVisibleConverter}}">
+                    <TextBlock Text="🔄" FontSize="16"/>
+                    <TextBlock Text="{Binding PollCount, StringFormat='Lần thứ {0}/100'}"
+                               Style="{StaticResource Body}" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="🔄 Retry" Style="{StaticResource SecondaryButton}"
+                            Command="{Binding RetryCommand}" FontSize="11"/>
+                    <Button Content="⏹ Dừng" Style="{StaticResource SecondaryButton}"
+                            Command="{Binding StopPollingCommand}" FontSize="11"
+                            Visibility="{Binding IsPolling, Converter={StaticResource BoolToVisibleConverter}}"/>
+                </StackPanel>
+
+                <!-- Cert Info -->
+                <Border Visibility="{Binding CertInfo, Converter={StaticResource EmptyToHiddenConverter}}"
+                        Background="#0d1a0d" CornerRadius="6" Padding="12">
+                    <StackPanel>
+                        <TextBlock Text="✅ THÔNG TIN CTS ĐÃ CẤP" Style="{StaticResource Caption}"
+                                   Foreground="{StaticResource SuccessBrush}"/>
+                        <TextBox Text="{Binding CertInfo}" Style="{StaticResource JsonBlock}"
+                                 MaxHeight="200"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <controls:CodePanelControl DataContext="{Binding CodePanel}"/>
+    </StackPanel>
+</UserControl>

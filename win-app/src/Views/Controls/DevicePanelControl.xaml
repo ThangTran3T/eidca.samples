@@ -1,0 +1,78 @@
+<UserControl x:Class="eIDCA.WinApp.Views.Controls.DevicePanelControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="12">
+
+            <!-- Section: NFC Reader -->
+            <TextBlock Text="ĐẦU ĐỌC THẺ" Style="{StaticResource SectionHeader}"/>
+
+            <Border Style="{StaticResource CardPanel}" Padding="12">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding NfcStatusDot}" FontSize="14"/>
+                        <TextBlock Text="{Binding NfcStatusLabel}" Style="{StaticResource Body}"
+                                   FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding NfcSerial, StringFormat='Serial: {0}'}"
+                               Style="{StaticResource Caption}"
+                               Visibility="{Binding NfcSerial, Converter={StaticResource EmptyToHiddenConverter}}"/>
+
+                    <!-- Card Info -->
+                    <Border BorderBrush="{StaticResource BorderBrush_}" BorderThickness="0,1,0,0" Padding="0,8,0,0"
+                            Visibility="{Binding CardName, Converter={StaticResource EmptyToHiddenConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="THẺ ĐÃ ĐỌC" Style="{StaticResource Caption}" Foreground="{StaticResource SuccessBrush}"/>
+                            <TextBlock Text="{Binding CardName}" Style="{StaticResource Body}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding CardId, StringFormat='CCCD: {0}'}" Style="{StaticResource Caption}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Section: Webcam -->
+            <TextBlock Text="CAMERA" Style="{StaticResource SectionHeader}"/>
+
+            <Border Style="{StaticResource CardPanel}" Padding="8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding CamStatusDot}" FontSize="14"/>
+                        <TextBlock Text="{Binding CamStatusLabel}" Style="{StaticResource Body}"
+                                   FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Webcam Preview -->
+                    <Border CornerRadius="6" ClipToBounds="True" Height="180">
+                        <Grid Background="#0d0d1a">
+                            <Image Source="{Binding WebcamFrame}"
+                                   Stretch="UniformToFill"
+                                   RenderOptions.BitmapScalingMode="LowQuality"/>
+                            <!-- Placeholder khi chưa có frame -->
+                            <TextBlock Text="📷 Chờ tín hiệu camera..."
+                                       VerticalAlignment="Center" HorizontalAlignment="Center"
+                                       Style="{StaticResource Caption}"
+                                       Visibility="{Binding WebcamFrame, Converter={StaticResource NullToVisibleConverter}}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Pause/Resume buttons -->
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="⏸ Chụp selfie" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding PauseCamCommand}" FontSize="11" Padding="8,5"/>
+                        <Button Content="▶ Tiếp tục" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ResumeCamCommand}" FontSize="11" Padding="8,5"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Mode Badge -->
+            <Border CornerRadius="6" Padding="10,6" Background="#1a1a35"
+                    BorderBrush="{StaticResource PrimaryBrush}" BorderThickness="1">
+                <TextBlock Text="{Binding ModeBadge}" FontSize="11" FontWeight="Bold"
+                           Foreground="{StaticResource PrimaryBrush}"
+                           HorizontalAlignment="Center"/>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

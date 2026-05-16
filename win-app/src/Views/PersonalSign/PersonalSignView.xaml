@@ -1,0 +1,29 @@
+<UserControl x:Class="eIDCA.WinApp.Views.PersonalSign.PersonalSignView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls"
+             xmlns:views="clr-namespace:eIDCA.WinApp.Views.PersonalSign">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <StackPanel>
+                <TextBlock Text="Ký số Cá nhân" Style="{StaticResource H1}"/>
+                <TextBlock Text="Upload tài liệu PDF và ký số bằng CCCD gắn chip." Style="{StaticResource Body}" Margin="0,4,0,0"/>
+            </StackPanel>
+            <controls:StepperControl CurrentStep="{Binding CurrentStep}"
+                                     Step0Label="1. Upload tài liệu"
+                                     Step1Label="2. Ký số"
+                                     Step2Label="3. Download"/>
+            <Border Style="{StaticResource CardPanel}">
+                <views:Step1UploadView DataContext="{Binding Step1}"/>
+            </Border>
+            <Border Style="{StaticResource CardPanel}"
+                    Visibility="{Binding CurrentStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=1}">
+                <views:Step2SignatureView DataContext="{Binding Step2}"/>
+            </Border>
+            <Border Style="{StaticResource CardPanel}"
+                    Visibility="{Binding CurrentStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=2}">
+                <views:Step3DownloadView DataContext="{Binding Step3}"/>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

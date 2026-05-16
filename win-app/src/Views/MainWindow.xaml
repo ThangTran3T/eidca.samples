@@ -1,0 +1,141 @@
+<Window x:Class="eIDCA.WinApp.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        xmlns:local="clr-namespace:eIDCA.WinApp.Views"
+        xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls"
+        xmlns:po="clr-namespace:eIDCA.WinApp.Views.PersonalOnboarding"
+        xmlns:ps="clr-namespace:eIDCA.WinApp.Views.PersonalSign"
+        xmlns:co="clr-namespace:eIDCA.WinApp.Views.CompanyOnboarding"
+        xmlns:cs="clr-namespace:eIDCA.WinApp.Views.CompanySign"
+        xmlns:povm="clr-namespace:eIDCA.WinApp.ViewModels.PersonalOnboarding"
+        xmlns:psvm="clr-namespace:eIDCA.WinApp.ViewModels.PersonalSign"
+        xmlns:covm="clr-namespace:eIDCA.WinApp.ViewModels.CompanyOnboarding"
+        xmlns:csvm="clr-namespace:eIDCA.WinApp.ViewModels.CompanySign"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        Title="eIDCA — Integration Sample"
+        Width="1400" Height="860"
+        MinWidth="1100" MinHeight="700"
+        Background="{StaticResource BgBrush}"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <!-- DataTemplates: ViewModel → View mapping -->
+        <DataTemplate DataType="{x:Type povm:PersonalOnboardingViewModel}">
+            <po:PersonalOnboardingView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type psvm:PersonalSignViewModel}">
+            <ps:PersonalSignView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type covm:CompanyOnboardingViewModel}">
+            <co:CompanyOnboardingView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type csvm:CompanySignViewModel}">
+            <cs:CompanySignView/>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56"/>
+            <RowDefinition Height="48"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="300"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ══ HEADER ══════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2"
+                Background="{StaticResource BgCard2Brush}"
+                BorderBrush="{StaticResource BorderBrush_}"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="20,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel.Resources>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Orientation" Value="Horizontal"/>
+                        </Style>
+                    </StackPanel.Resources>
+                    <Border Width="36" Height="36" CornerRadius="8"
+                            Background="{StaticResource PrimaryBrush}"
+                            Margin="0,0,12,0">
+                        <TextBlock Text="eID" Foreground="White" FontSize="12" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                        <TextBlock Text="eIDCA Integration Sample" Style="{StaticResource H2}"/>
+                        <TextBlock Text="Windows Desktop Application (.NET 8 / WPF)" Style="{StaticResource Caption}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Border Grid.Column="2" CornerRadius="4" Padding="10,4"
+                        Background="#1a1a35" BorderBrush="{StaticResource PrimaryBrush}"
+                        BorderThickness="1" VerticalAlignment="Center">
+                    <TextBlock Text="SAMPLE CODE" Foreground="{StaticResource PrimaryBrush}"
+                               FontSize="10" FontWeight="Bold"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ══ TAB BAR ══════════════════════════════════════════════════════ -->
+        <Border Grid.Row="1" Grid.Column="0"
+                Background="{StaticResource BgCard2Brush}"
+                BorderBrush="{StaticResource BorderBrush_}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                <controls:TabButton Text="Đăng ký CTS Cá nhân"
+                                    Index="0"
+                                    Command="{Binding NavigateToCommand}"
+                                    IsSelected="{Binding SelectedTabIndex, Converter={StaticResource IntEqualConverter}, ConverterParameter=0}"/>
+                <controls:TabButton Text="Ký số Cá nhân"
+                                    Index="1"
+                                    Command="{Binding NavigateToCommand}"
+                                    IsSelected="{Binding SelectedTabIndex, Converter={StaticResource IntEqualConverter}, ConverterParameter=1}"/>
+                <controls:TabButton Text="Đăng ký CTS Tổ chức"
+                                    Index="2"
+                                    Command="{Binding NavigateToCommand}"
+                                    IsSelected="{Binding SelectedTabIndex, Converter={StaticResource IntEqualConverter}, ConverterParameter=2}"/>
+                <controls:TabButton Text="Ký số Tổ chức"
+                                    Index="3"
+                                    Command="{Binding NavigateToCommand}"
+                                    IsSelected="{Binding SelectedTabIndex, Converter={StaticResource IntEqualConverter}, ConverterParameter=3}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ══ MAIN CONTENT ═════════════════════════════════════════════════ -->
+        <ScrollViewer Grid.Row="2" Grid.Column="0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="20">
+            <ContentControl Content="{Binding CurrentFlow}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Top"/>
+        </ScrollViewer>
+
+        <!-- ══ SIDEBAR ══════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="1" Grid.Column="1" Grid.RowSpan="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0"
+                    BorderBrush="{StaticResource BorderBrush_}" BorderThickness="1,0,0,0">
+                <controls:DevicePanelControl DataContext="{Binding DevicePanel}"/>
+            </Border>
+
+            <Border Grid.Row="1"
+                    BorderBrush="{StaticResource BorderBrush_}" BorderThickness="1,1,0,0">
+                <controls:ModeToggleControl DataContext="{Binding ModeToggle}"/>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,36 @@
+<UserControl x:Class="eIDCA.WinApp.Views.PersonalSign.Step2SignatureView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls">
+    <StackPanel>
+        <TextBlock Text="Bước 2 — Ký số tài liệu" Style="{StaticResource H2}"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="160"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource CardPanel}" Padding="12" Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Text="THÔNG TIN KÝ SỐ" Style="{StaticResource SectionHeader}"/>
+                    <TextBlock Text="Hệ thống sẽ sử dụng AA Signature từ chip CCCD để ký tài liệu." Style="{StaticResource Body}"/>
+                    <TextBlock Text="Đảm bảo thẻ CCCD đang đặt trên đầu đọc." Style="{StaticResource Caption}"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Style="{StaticResource CardPanel}" Padding="8">
+                <StackPanel>
+                    <TextBlock Text="SELFIE" Style="{StaticResource SectionHeader}"/>
+                    <Border CornerRadius="6" ClipToBounds="True" Height="110" Background="#0d0d1a">
+                        <Image Source="{Binding SelfieImage}" Stretch="UniformToFill"/>
+                    </Border>
+                    <Button Content="📷 Chụp lại" Style="{StaticResource SecondaryButton}"
+                            Command="{Binding RetakeSelfieCommand}" FontSize="11" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+        <TextBlock Text="{Binding StatusMsg}" Style="{StaticResource StatusLabel}"
+                   Visibility="{Binding StatusMsg, Converter={StaticResource EmptyToHiddenConverter}}"/>
+        <Button Content="✍️ Ký số" Style="{StaticResource PrimaryButton}"
+                Command="{Binding SignCommand}" HorizontalAlignment="Left" Padding="20,10"/>
+        <controls:CodePanelControl DataContext="{Binding CodePanel}"/>
+    </StackPanel>
+</UserControl>

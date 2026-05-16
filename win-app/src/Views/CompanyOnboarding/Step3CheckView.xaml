@@ -1,0 +1,21 @@
+<UserControl x:Class="eIDCA.WinApp.Views.CompanyOnboarding.Step3CheckView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls">
+    <StackPanel>
+        <TextBlock Text="Bước 3 — Kiểm tra cấp CTS Tổ chức" Style="{StaticResource H2}"/>
+        <Border Style="{StaticResource CardPanel}">
+            <StackPanel>
+                <TextBlock Text="{Binding StatusMsg}" Style="{StaticResource StatusLabel}"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="🔄 Retry" Style="{StaticResource SecondaryButton}" Command="{Binding RetryCommand}" FontSize="11"/>
+                </StackPanel>
+                <Border Visibility="{Binding CertInfo, Converter={StaticResource EmptyToHiddenConverter}}"
+                        Background="#0d1a0d" CornerRadius="6" Padding="12">
+                    <TextBox Text="{Binding CertInfo}" Style="{StaticResource JsonBlock}" MaxHeight="200"/>
+                </Border>
+            </StackPanel>
+        </Border>
+        <controls:CodePanelControl DataContext="{Binding CodePanel}"/>
+    </StackPanel>
+</UserControl>
