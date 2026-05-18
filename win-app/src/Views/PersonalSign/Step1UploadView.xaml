@@ -9,12 +9,27 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="140"/>
             </Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="#1e1e3a" CornerRadius="6" Padding="12,8" Margin="0,0,8,0">
+            <Border Grid.Column="0" Background="{StaticResource BgCard2Brush}" CornerRadius="6" Padding="12,8" Margin="0,0,8,0">
                 <TextBlock Text="{Binding SelectedFileName}" Style="{StaticResource Body}"
                            TextTrimming="CharacterEllipsis"/>
             </Border>
             <Button Grid.Column="1" Content="📂 Chọn file PDF" Style="{StaticResource SecondaryButton}"
                     Command="{Binding BrowseFileCommand}"/>
+        </Grid>
+        <Grid Margin="0,8,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="140"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="{StaticResource BgCard2Brush}" CornerRadius="6" Padding="12,8" Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Mẫu chữ ký:" Style="{StaticResource Caption}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TemplateName}" Style="{StaticResource Body}"
+                               TextTrimming="CharacterEllipsis" Foreground="{StaticResource PrimaryBrush}" FontWeight="SemiBold"/>
+                </StackPanel>
+            </Border>
+            <Button Grid.Column="1" Content="⚙️ Tải mẫu JSON" Style="{StaticResource SecondaryButton}"
+                    Command="{Binding LoadTemplateCommand}"/>
         </Grid>
         <StackPanel>
             <TextBlock Text="Số CCCD" Style="{StaticResource Caption}"/>

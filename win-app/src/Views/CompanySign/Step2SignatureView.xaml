@@ -15,7 +15,7 @@
             <Border Grid.Column="1" Style="{StaticResource CardPanel}" Padding="8">
                 <StackPanel>
                     <TextBlock Text="SELFIE" Style="{StaticResource SectionHeader}"/>
-                    <Border CornerRadius="6" ClipToBounds="True" Height="110" Background="#0d0d1a">
+                    <Border CornerRadius="6" ClipToBounds="True" Height="110" Background="{StaticResource BgCard2Brush}">
                         <Image Source="{Binding SelfieImage}" Stretch="UniformToFill"/>
                     </Border>
                     <Button Content="📷 Chụp lại" Style="{StaticResource SecondaryButton}"

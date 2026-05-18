@@ -11,7 +11,7 @@
                     <Button Content="🔄 Retry" Style="{StaticResource SecondaryButton}" Command="{Binding RetryCommand}" FontSize="11"/>
                 </StackPanel>
                 <Border Visibility="{Binding CertInfo, Converter={StaticResource EmptyToHiddenConverter}}"
-                        Background="#0d1a0d" CornerRadius="6" Padding="12">
+                        Background="#dcfce7" CornerRadius="6" Padding="12">
                     <TextBox Text="{Binding CertInfo}" Style="{StaticResource JsonBlock}" MaxHeight="200"/>
                 </Border>
             </StackPanel>

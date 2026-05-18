@@ -77,7 +77,7 @@
                 </StackPanel>
 
                 <Border Grid.Column="2" CornerRadius="4" Padding="10,4"
-                        Background="#1a1a35" BorderBrush="{StaticResource PrimaryBrush}"
+                        Background="{StaticResource BgCardBrush}" BorderBrush="{StaticResource PrimaryBrush}"
                         BorderThickness="1" VerticalAlignment="Center">
                     <TextBlock Text="SAMPLE CODE" Foreground="{StaticResource PrimaryBrush}"
                                FontSize="10" FontWeight="Bold"/>

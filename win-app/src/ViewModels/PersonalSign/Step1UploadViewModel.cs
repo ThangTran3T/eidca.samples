@@ -28,6 +28,9 @@ public partial class Step1UploadViewModel : ObservableObject
         "\"sign_visibility\":\"shown\",\"watermark_pos\":\"center\"," +
         "\"watermark_img_b64\":\"\",\"hand_sig_img_b64\":\"\"}]";
 
+    [ObservableProperty] private string _signPropsJson = DefaultSignProps;
+    [ObservableProperty] private string _templateName  = "Mặc định";
+
     [ObservableProperty] private string _idNumber      = "";
     [ObservableProperty] private string _selectedFileName = "Chưa chọn file...";
     [ObservableProperty]
@@ -65,6 +68,29 @@ public partial class Step1UploadViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
+    private async Task LoadTemplateAsync()
+    {
+        var dlg = new OpenFileDialog
+        {
+            Title  = "Chọn mẫu chữ ký (JSON)",
+            Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+        };
+        if (dlg.ShowDialog() == true)
+        {
+            try
+            {
+                SignPropsJson = await System.IO.File.ReadAllTextAsync(dlg.FileName);
+                TemplateName  = System.IO.Path.GetFileName(dlg.FileName);
+                StatusMsg = $"✅ Đã tải mẫu: {TemplateName}";
+            }
+            catch (Exception ex)
+            {
+                StatusMsg = $"❌ Lỗi đọc file mẫu: {ex.Message}";
+            }
+        }
+    }
+
     [RelayCommand(CanExecute = nameof(CanUpload))]
     private async Task UploadAsync()
     {
@@ -87,7 +113,7 @@ public partial class Step1UploadViewModel : ObservableObject
         try
         {
             _state.IdNumber = IdNumber;
-            var data = await _api.SignGetChallengeAsync(_state.SelectedFilePath, IdNumber, DefaultSignProps);
+            var data = await _api.SignGetChallengeAsync(_state.SelectedFilePath, IdNumber, SignPropsJson);
 
             _state.TransactionCode = data.GetProperty("transaction_code").GetString() ?? "";
             _state.TokenSign       = data.GetProperty("token_sign").GetString() ?? "";

@@ -6,7 +6,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!-- ModernWpf Dark Theme -->
-                <ui:ThemeResources RequestedTheme="Dark"/>
+                <ui:ThemeResources RequestedTheme="Light"/>
                 <ui:XamlControlsResources/>
                 <!-- App Custom Resources -->
                 <ResourceDictionary Source="/Resources/AppStyles.xaml"/>
