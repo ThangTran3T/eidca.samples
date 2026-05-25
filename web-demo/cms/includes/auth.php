@@ -69,6 +69,9 @@ function doLogin(string $username, string $password): bool {
         'api_key'  => $user['api_key'],
         'nfc_url'  => $user['nfc_url'] ?: DEFAULT_NFC_URL,
         'cam_url'  => $user['cam_url'] ?: DEFAULT_CAM_URL,
+        'partner_code'  => $user['partner_code'],
+        'eidca_api_key' => $user['eidca_api_key'],
+        'eidca_api_url' => $user['eidca_api_url'] ?: 'https://api.eidca.vn',
     ];
     return true;
 }
@@ -122,6 +125,9 @@ function refreshSession(): void {
         'api_key'  => $row['api_key'],
         'nfc_url'  => $row['nfc_url'] ?: DEFAULT_NFC_URL,
         'cam_url'  => $row['cam_url'] ?: DEFAULT_CAM_URL,
+        'partner_code'  => $row['partner_code'],
+        'eidca_api_key' => $row['eidca_api_key'],
+        'eidca_api_url' => $row['eidca_api_url'] ?: 'https://api.eidca.vn',
     ];
 }
 

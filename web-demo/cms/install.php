@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS users (
     api_key       VARCHAR(60) NOT NULL UNIQUE,
     nfc_url       VARCHAR(255) DEFAULT NULL,
     cam_url       VARCHAR(255) DEFAULT NULL,
+    partner_code  VARCHAR(255) DEFAULT NULL,
+    eidca_api_key VARCHAR(255) DEFAULT NULL,
+    eidca_api_url VARCHAR(255) DEFAULT 'https://api.eidca.vn',
     is_active     TINYINT(1) NOT NULL DEFAULT 1,
     last_login    DATETIME DEFAULT NULL,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -40,6 +43,35 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_api_key (api_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ");
+
+// Check and add missing columns if upgrading from older version
+try {
+    $db = DB::get();
+    
+    // Add partner_code
+    $cols = $db->query("SHOW COLUMNS FROM users LIKE 'partner_code'")->fetchAll();
+    if (empty($cols)) {
+        $db->exec("ALTER TABLE users ADD COLUMN partner_code VARCHAR(255) DEFAULT NULL AFTER cam_url");
+        $done[] = "Nâng cấp: Thêm cột partner_code thành công.";
+    }
+
+    // Add eidca_api_key
+    $cols = $db->query("SHOW COLUMNS FROM users LIKE 'eidca_api_key'")->fetchAll();
+    if (empty($cols)) {
+        $db->exec("ALTER TABLE users ADD COLUMN eidca_api_key VARCHAR(255) DEFAULT NULL AFTER partner_code");
+        $done[] = "Nâng cấp: Thêm cột eidca_api_key thành công.";
+    }
+
+    // Add eidca_api_url
+    $cols = $db->query("SHOW COLUMNS FROM users LIKE 'eidca_api_url'")->fetchAll();
+    if (empty($cols)) {
+        $db->exec("ALTER TABLE users ADD COLUMN eidca_api_url VARCHAR(255) DEFAULT 'https://api.eidca.vn' AFTER eidca_api_key");
+        $done[] = "Nâng cấp: Thêm cột eidca_api_url thành công.";
+    }
+} catch (PDOException $e) {
+    $errors[] = "Lỗi khi nâng cấp cấu trúc bảng users: " . $e->getMessage();
+}
+
 
 run('Bảng activity_logs', "
 CREATE TABLE IF NOT EXISTS activity_logs (

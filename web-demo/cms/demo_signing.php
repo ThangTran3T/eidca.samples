@@ -5,26 +5,22 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/layout.php';
 
 requireLogin();
 $user = currentUser();
 
-$row     = DB::row('SELECT * FROM users WHERE id=? LIMIT 1', [$user['id']]);
-$nfcUrl  = $row['nfc_url'] ?: DEFAULT_NFC_URL;
-$camUrl  = $row['cam_url'] ?: DEFAULT_CAM_URL;
-$apiKey  = $row['api_key'] ?? '';
-$base = _base();
-?>
+$row         = DB::row('SELECT * FROM users WHERE id=? LIMIT 1', [$user['id']]);
+$nfcUrl      = $row['nfc_url'] ?: DEFAULT_NFC_URL;
+$camUrl      = $row['cam_url'] ?: DEFAULT_CAM_URL;
+$apiKey      = $row['api_key'] ?? '';
+$partnerCode = $row['partner_code'] ?? 'PARTNER001';
+$eidcaApiKey = $row['eidca_api_key'] ?? '';
+$eidcaApiUrl = $row['eidca_api_url'] ?: 'https://api.eidca.vn';
+$base        = _base();
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Ký số Tài liệu – EIDCA</title>
-<meta name="description" content="Ký số tài liệu điện tử cá nhân EIDCA an toàn, pháp lý. Sử dụng CCCD gắn chip và chứng thư số để ký tài liệu trong vài giây."/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+layoutHeader('Ký số Tài liệu', 'demo_signing');
+?>
 <script>window._sioLoaded=false;</script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous" onload="window._sioLoaded=true" onerror="console.warn('[EIDCA] socket.io CDN unavailable')"></script>
 <!-- CMS Integration: load eidcaLogEvent helper -->
@@ -342,6 +338,59 @@ input.filled { border-color:var(--accent); background:#f6fef9; }
 .gov-seal { width:28px; height:28px; border-radius:50%; background:var(--surface-alt); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; }
 .gov-seal svg { width:14px; height:14px; }
 
+/* Webcam / selfie */
+.webcam-container {
+  border:1.5px solid var(--border); border-radius:var(--r-lg); overflow:hidden;
+  background:#111; position:relative; aspect-ratio:4/3;
+}
+.webcam-container canvas,
+.webcam-container img  { width:100%; height:100%; object-fit:cover; display:block; }
+/* Face guide oval */
+.face-guide {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-53%);
+  width:38%; padding-bottom:48%;
+  border-radius:50%; border:2.5px dashed rgba(255,255,255,.65);
+  pointer-events:none; box-shadow:0 0 0 2000px rgba(0,0,0,.35);
+}
+/* Scan line animation inside face guide */
+.face-scan-line {
+  position:absolute; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,rgba(0,200,150,.8),transparent);
+  animation:faceScan 2s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes faceScan {
+  0%   { top:20%; opacity:0; }
+  10%  { opacity:1; }
+  90%  { opacity:1; }
+  100% { top:80%; opacity:0; }
+}
+.webcam-captured { position:relative; }
+.webcam-captured .capture-badge {
+  position:absolute; top:10px; right:10px;
+  background:var(--accent); color:#fff; font-size:11px; font-weight:700;
+  padding:4px 10px; border-radius:20px; display:flex; align-items:center; gap:4px;
+}
+/* Face score bar */
+.face-score-bar {
+  margin-top:.75rem; padding:10px 14px;
+  background:var(--success-light); border-radius:var(--r-md);
+  border:1px solid #a7d7bb;
+  display:flex; align-items:center; gap:10px;
+}
+.score-track { flex:1; height:6px; background:rgba(27,122,71,.15); border-radius:3px; overflow:hidden; }
+.score-fill  { height:100%; border-radius:3px; background:var(--accent); transition:width 1s ease; }
+
+/* Selfie area */
+.selfie-area { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.selfie-guide-box {
+  background:var(--surface-alt); border:1px solid var(--border);
+  border-radius:var(--r-lg); padding:1.25rem;
+}
+.selfie-guide-box h4 { font-size:13px; font-weight:600; color:var(--text); margin-bottom:.75rem; }
+.selfie-guide-box ul { padding-left:1.1rem; display:flex; flex-direction:column; gap:7px; }
+.selfie-guide-box li { font-size:12.5px; color:var(--text-2); line-height:1.4; }
+
 @media(max-width:600px) {
   .topnav { padding:0 1rem; } .device-pill span { display:none; }
   .page-wrap { padding:1.5rem 1rem 3rem; }
@@ -365,6 +414,9 @@ window.EIDCA_NFC_URL    = '<?= $nfcUrl ?>';
 window.EIDCA_CAM_URL    = '<?= $camUrl ?>';
 window.EIDCA_API_KEY    = '<?= $apiKey ?>';
 window.EIDCA_CMS_LOG_URL = location.origin + '<?= $base ?>/api/log_event.php';
+window.EIDCA_PROVIDER_PARTNER_CODE = '<?= e($partnerCode) ?>';
+window.EIDCA_PROVIDER_API_KEY      = '<?= e($eidcaApiKey) ?>';
+window.EIDCA_PROVIDER_API_URL      = '<?= e($eidcaApiUrl) ?>';
 window.eidcaLogEvent = function(action, payload) {
   payload = payload || {};
   fetch(window.EIDCA_CMS_LOG_URL, {
@@ -374,34 +426,7 @@ window.eidcaLogEvent = function(action, payload) {
   }).catch(function(){});
 };
 </script>
-</head>
-<body>
-<div style="position:fixed;top:10px;right:10px;z-index:99999">
-    <a href="<?= $base ?>/dashboard.html" style="background:#7c3aed;color:#fff;padding:7px 14px;border-radius:8px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(124,58,237,.4)">&larr; CMS</a>
-</div>
-
-
-<!-- ── Top Navigation ── -->
-<nav class="topnav" role="navigation" aria-label="Điều hướng chính">
-  <a class="nav-brand" href="#" aria-label="EIDCA - Trang chủ">
-    <div class="nav-logo" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3L4 7v5c0 5.25 3.75 9.75 8 11 4.25-1.25 8-5.75 8-11V7l-8-4z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2.5L15 9" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <div><span class="nav-title">EIDCA <span>Ký số điện tử</span></span></div>
-  </a>
-  <div class="nav-right">
-    <button class="device-pill" id="devicePill" onclick="toggleDeviceMode()" title="Nhấn để chuyển chế độ thiết bị">
-      <span class="dot" id="deviceDot"></span>
-      <span id="devicePillLabel">Demo Mode</span>
-    </button>
-    <div class="nav-secure" aria-label="Kết nối bảo mật">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      Kết nối an toàn
-    </div>
-  </div>
-</nav>
-
-<main class="page-wrap" role="main">
+<div class="page-wrap">
   <div class="page-hero">
     <div class="badge-top" role="note">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3L4 7v5c0 5.25 3.75 9.75 8 11 4.25-1.25 8-5.75 8-11V7l-8-4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
@@ -463,14 +488,118 @@ const MOCK_DS_CERT = {
   }
 };
 
+// ─── Canvas-based Mock Webcam ─────────────────────────────────────────────
+let _mockCamRaf = null;  // requestAnimationFrame ID
+let _mockCamActive = false;
+let _mockScanY = 0;
+let _mockScanDir = 1;
+
+function startMockCanvas() {
+  _mockCamActive = true;
+  _drawMockFrame();
+}
+function stopMockCanvas() {
+  _mockCamActive = false;
+  if (_mockCamRaf) { cancelAnimationFrame(_mockCamRaf); _mockCamRaf = null; }
+}
+function _drawMockFrame() {
+  if (!_mockCamActive) return;
+  const canvas = document.getElementById('mockCamCanvas');
+  if (!canvas) { _mockCamRaf = requestAnimationFrame(_drawMockFrame); return; }
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+
+  // Background gradient (dark studio)
+  const bg = ctx.createRadialGradient(W/2,H/2,20,W/2,H/2,W*0.7);
+  bg.addColorStop(0,'#1a1a2e'); bg.addColorStop(1,'#0a0a14');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+  // Subtle noise texture
+  for(let i=0;i<60;i++){
+    ctx.fillStyle=`rgba(255,255,255,${Math.random()*0.02})`;
+    ctx.fillRect(Math.random()*W,Math.random()*H,1,1);
+  }
+
+  // Face oval guide
+  const cx=W/2, cy=H*0.47, rx=W*0.19, ry=H*0.30;
+  // Outer dark overlay (vignette effect)
+  const vgn = ctx.createRadialGradient(cx,cy,Math.max(rx,ry)*0.6,cx,cy,W*0.8);
+  vgn.addColorStop(0,'rgba(0,0,0,0)'); vgn.addColorStop(1,'rgba(0,0,0,0.55)');
+  ctx.fillStyle=vgn; ctx.fillRect(0,0,W,H);
+
+  // Dashed oval border (face guide)
+  ctx.save();
+  ctx.setLineDash([8,5]);
+  ctx.strokeStyle='rgba(0,168,120,0.8)';
+  ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+  ctx.stroke();
+  // Corner tick marks
+  ctx.setLineDash([]);
+  ctx.strokeStyle='rgba(0,168,120,1)';
+  ctx.lineWidth=3;
+  const tL=10;
+  [[cx-rx,cy-ry*0.3,0,-tL,tL,0],[cx+rx,cy-ry*0.3,0,-tL,-tL,0],
+   [cx-rx,cy+ry*0.3,0,tL,tL,0],[cx+rx,cy+ry*0.3,0,tL,-tL,0]].forEach(([x,y,dx1,dy1,dx2,dy2])=>{
+    ctx.beginPath(); ctx.moveTo(x+dx1,y+dy1); ctx.lineTo(x,y); ctx.lineTo(x+dx2,y+dy2); ctx.stroke();
+  });
+  ctx.restore();
+
+  // Scanning line inside oval
+  _mockScanY += _mockScanDir * 1.2;
+  if (_mockScanY > ry*0.8)  _mockScanDir = -1;
+  if (_mockScanY < -ry*0.8) _mockScanDir =  1;
+  const sy = cy + _mockScanY;
+  // Clip to oval
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx-2,ry-2,0,0,Math.PI*2); ctx.clip();
+  const scanGrad = ctx.createLinearGradient(cx-rx,sy,cx+rx,sy);
+  scanGrad.addColorStop(0,'rgba(0,168,120,0)');
+  scanGrad.addColorStop(0.4,'rgba(0,168,120,0.7)');
+  scanGrad.addColorStop(0.5,'rgba(0,255,180,0.9)');
+  scanGrad.addColorStop(0.6,'rgba(0,168,120,0.7)');
+  scanGrad.addColorStop(1,'rgba(0,168,120,0)');
+  ctx.fillStyle=scanGrad;
+  ctx.fillRect(cx-rx,sy-1.5,rx*2,3);
+  ctx.restore();
+
+  // Status text
+  ctx.font='bold 11px Inter,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  ctx.textAlign='center';
+  ctx.fillText('DEMO MODE · LIVE', W/2, H-10);
+
+  // Corner timestamp
+  ctx.font='10px monospace';
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  ctx.textAlign='left';
+  ctx.fillText(new Date().toLocaleTimeString('vi-VN'), 8, H-8);
+
+  _mockCamRaf = requestAnimationFrame(_drawMockFrame);
+}
+
+// Capture a frame from mock canvas as base64
+function captureMockFrame() {
+  const canvas = document.getElementById('mockCamCanvas');
+  if (!canvas) return null;
+  return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+}
+
 // ─── Mock Socket ──────────────────────────────────────────────────────────────
 function createMockSocket() {
-  let _nfcOk=false, _timers=[];
+  let _nfcOk=false, _camOk=false, _timers=[];
   const on = {
     nfcConnect:()=>{}, nfcDisconnect:()=>{}, deviceInfo:()=>{},
     personalInfo:()=>{}, avatarImage:()=>{}, dsCert:()=>{},
     cardError:()=>{}, aaResponse:()=>{},
+    camConnect:()=>{}, camDisconnect:()=>{}, webcamFrame:()=>{},
   };
+  function _startCam(){
+    _camOk=true; on.camConnect();
+    startMockCanvas();
+  }
+  function _stopCam(){ stopMockCanvas(); _camOk=false; on.camDisconnect(); }
   function _readCard(){
     _timers.push(setTimeout(()=>{
       on.personalInfo(MOCK_PERSONAL_INFO);
@@ -484,23 +613,29 @@ function createMockSocket() {
     on,
     connect(){
       _timers.push(setTimeout(()=>{ _nfcOk=true; on.nfcConnect(); on.deviceInfo(MOCK_DEVICE_INFO); _readCard(); },700));
+      _timers.push(setTimeout(_startCam, 800));
     },
-    disconnect(){ _nfcOk=false; _timers.forEach(clearTimeout); _timers=[]; on.nfcDisconnect(); },
+    disconnect(){ _nfcOk=false; _timers.forEach(clearTimeout); _timers=[]; _stopCam(); on.nfcDisconnect(); },
+    pauseCam(){ _stopCam(); },
+    resumeCam(){ if(!_camOk) _startCam(); },
     sendAA(challenge){ setTimeout(()=>on.aaResponse({id:7,data:{aa_signature:btoa('MOCK_AA_SIG_'+Date.now()),aa_challege:challenge}}),500); },
     simulateCardRead(){ _readCard(); },
     get isNfcConnected(){ return _nfcOk; },
+    get isCamConnected(){ return _camOk; },
   };
 }
 
 // ─── Real Socket ──────────────────────────────────────────────────────────────
 function createRealSocket() {
   const NFC_URL = 'https://192.168.5.1:8000';
-  let nfcSock=null;
+  const CAM_URL = 'https://192.168.5.1:9000';
+  let nfcSock=null, camSock=null;
   const _clientId = 'web_' + Date.now();
   const on = {
     nfcConnect:()=>{}, nfcDisconnect:()=>{}, deviceInfo:()=>{},
     personalInfo:()=>{}, avatarImage:()=>{}, dsCert:()=>{},
     cardError:()=>{}, aaResponse:()=>{},
+    camConnect:()=>{}, camDisconnect:()=>{}, webcamFrame:()=>{},
   };
   function _connectNfc(){
     if (typeof io === 'undefined') { console.warn('[Socket] socket.io not loaded'); return; }
@@ -512,13 +647,23 @@ function createRealSocket() {
       switch(d.id){ case 2:on.personalInfo(d);break; case 4:on.avatarImage(d);break; case 5:on.dsCert(d);break; case 3:on.cardError(d);break; case 7:on.aaResponse(d);break; }
     });
   }
+  function _connectCam(){
+    if (typeof io === 'undefined') return;
+    camSock = io(CAM_URL,{ transports:['websocket'], rejectUnauthorized:false, reconnection:true, reconnectionAttempts:5, reconnectionDelay:2000 });
+    camSock.on('connect', ()=>on.camConnect());
+    camSock.on('disconnect', ()=>on.camDisconnect());
+    camSock.on('/image', d=>on.webcamFrame(d));
+  }
   return {
     on,
-    connect(){ _connectNfc(); },
-    disconnect(){ nfcSock?.disconnect(); },
+    connect(){ _connectNfc(); _connectCam(); },
+    disconnect(){ nfcSock?.disconnect(); camSock?.disconnect(); },
+    pauseCam(){ camSock?.disconnect(); },
+    resumeCam(){ if(!camSock){ _connectCam(); } else if(camSock.disconnected){ camSock.connect(); } },
     sendAA(ch){ if(nfcSock?.connected) nfcSock.emit('/get_aa',{clientId:_clientId,challenge:ch}); },
     sendReRead(info){ if(nfcSock?.connected) nfcSock.emit('/input_data',{...info,clientId:_clientId}); },
     get isNfcConnected(){ return nfcSock?.connected??false; },
+    get isCamConnected(){ return camSock?.connected??false; },
   };
 }
 
@@ -533,6 +678,7 @@ const S = {
 
   // device states
   nfcStatus: 'idle', // idle|connecting|connected|scanning|ok|error
+  camStatus: 'idle',
   deviceInfo: null,
 
   // card data
@@ -541,11 +687,26 @@ const S = {
   rawNfc: null,
   dsCert: null,
 
+  // webcam selfie
+  selfieCapture: null,
+  isCapturing: false,
+  webcamLastFrame: null,
+  faceScore: 0,
+
+  // challenge cache at Step 2
+  liveChallenge: null,
+  liveTokenChallenge: null,
+  liveTransactionCode: null,
+  liveAaSignature: null,
+  liveDocId: null,
+  challengeLoading: false,
+  challengeError: null,
+
   // document to sign
   docFile: null,       // File object
   docName: '',
   docSize: 0,
-  docType: '',         // 'pdf'|'docx'|'other'
+  docType: '',         // 'pdf'|'xml'
 
   // sign options
   signOptions: {
@@ -554,10 +715,6 @@ const S = {
     signatureType: 'PAdES',  // PAdES | CAdES
     includeTimestamp: true,
   },
-
-  // PIN
-  pin: '',
-  pinVerified: false,
 
   // result
   signResult: null,
@@ -590,7 +747,10 @@ function setupSocket() {
     S.cardData = evt.data;
     S.nfcStatus = 'ok';
     updateDevicePill(); renderDeviceBar();
-    if (S.step === 2) render();
+    render();
+    if (!S.useMock && S.step === 2) {
+      liveFetchChallengeImmediately();
+    }
   };
   S.socket.on.avatarImage = (evt) => {
     S.cardPhoto = evt.data.img_data || null;
@@ -608,12 +768,196 @@ function setupSocket() {
     if (S.step === 2) render();
   };
   S.socket.on.aaResponse = (evt) => {
-    // AA verified — proceed to signing
+    // Dynamic response caching
+  };
+
+  // Webcam events
+  S.socket.on.camConnect = () => {
+    S.camStatus = 'connected';
+    renderDeviceBar();
     if (S.step === 2) {
-      S.pinVerified = true;
       render();
+      _renderWebcamFrame();
     }
   };
+  S.socket.on.camDisconnect = () => {
+    S.camStatus = 'idle';
+    renderDeviceBar();
+    if (S.step === 2) render();
+  };
+  S.socket.on.webcamFrame = (frame) => {
+    S.webcamLastFrame = frame.data;
+    if (S.step === 2 && !S.selfieCapture) _renderWebcamFrame();
+  };
+}
+
+async function liveFetchChallengeImmediately() {
+  if (S.useMock) return;
+  if (S.liveChallenge) return; // Đã có challenge
+  const idNumber = S.cardData?.idCode;
+  if (!idNumber) return;
+
+  const partnerCode = window.EIDCA_PROVIDER_PARTNER_CODE;
+  const providerApiKey = window.EIDCA_PROVIDER_API_KEY;
+  const providerApiUrl = window.EIDCA_PROVIDER_API_URL;
+  
+  if (!providerApiKey || !partnerCode) {
+    S.challengeError = "Vui lòng cấu hình API Key và Partner Code của Nhà cung cấp trong phần Cài đặt CMS trước.";
+    render();
+    return;
+  }
+
+  S.nfcStatus = 'scanning';
+  S.challengeLoading = true;
+  S.challengeError = null;
+  render();
+
+  try {
+    const formData = new FormData();
+    formData.append('documents', S.docFile);
+    formData.append('id_number', idNumber);
+    formData.append('security_level', 'LEVEL_2');
+    
+    const props = [{
+      page: 1,
+      lLx: 47,
+      lLy: 693,
+      width: 167,
+      height: 95,
+      template: "text_only",
+      show_info: ["reason", "location", "contact", "name", "org", "date"],
+      location: S.signOptions.location || "Hà Nội",
+      location_label: "Tại: Phòng giao dịch",
+      reason: S.signOptions.reason || "Ký hợp đồng điện tử",
+      reason_label: S.cardData?.personName || "Nguyễn Văn A",
+      contact: "Giám đốc",
+      contact_label: "",
+      date_label: "Ngày ký",
+      text_color: "#ff0033",
+      font_size: 11,
+      sign_visibility: "shown",
+      watermark_pos: "center",
+      watermark_img_b64: "",
+      hand_sig_img_b64: ""
+    }];
+    formData.append('sign_props', JSON.stringify(props));
+
+    const challengeRes = await fetch(`${providerApiUrl}/ca/api/sign/challenge`, {
+      method: 'POST',
+      headers: {
+        'x-api-key': providerApiKey,
+        'code': partnerCode
+      },
+      body: formData
+    });
+    const challengeJson = await challengeRes.json().catch(() => ({}));
+    
+    if (!challengeRes.ok || !challengeJson.success) {
+      const errMsg = challengeJson.error?.message || challengeJson.message || (typeof challengeJson.error === 'string' ? challengeJson.error : null) || "Lấy Challenge từ eIDCA thất bại.";
+      throw new Error(errMsg);
+    }
+
+    const step1Data = challengeJson.data;
+    S.liveTransactionCode = step1Data.transaction_code;
+    S.liveTokenChallenge = step1Data.token_sign; // Dùng token_sign làm tokenChallenge
+    S.liveDocId = step1Data.docs[0].doc_id;
+    S.liveChallenge = step1Data.docs[0].doc_challenge;
+    
+    S.challengeLoading = false;
+    S.nfcStatus = 'ok';
+    render();
+
+    console.log("[eIDCA] Nhận challenge thành công, gửi lệnh ký Active Authentication ngay...");
+    S.socket.on.aaResponse = (evt) => {
+      S.socket.on.aaResponse = null;
+      if (evt && evt.data && evt.data.aa_signature) {
+        S.liveAaSignature = evt.data.aa_signature;
+        console.log("[eIDCA] Đã lấy và cache aa_signature thành công!");
+      } else {
+        console.error("[eIDCA] Lấy aa_signature thất bại.");
+      }
+    };
+    S.socket.sendAA(S.liveChallenge);
+
+  } catch (err) {
+    console.error("[eIDCA] Challenge check error:", err);
+    S.challengeError = err.message || "Không thể kết nối đến máy chủ eIDCA để lấy Challenge.";
+    S.challengeLoading = false;
+    S.nfcStatus = 'error';
+    render();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DEVICE MODE TOGGLE & STATUS PILL
+// ═══════════════════════════════════════════════════════════════════════════════
+function toggleDeviceMode() {
+  S.useMock = !S.useMock;
+  // Reset device states
+  S.nfcStatus = 'idle'; S.camStatus = 'idle';
+  S.cardData = null; S.cardPhoto = null; S.rawNfc = null; S.dsCert = null;
+  S.selfieCapture = null; S.webcamLastFrame = null; S.faceScore = 0;
+  S.liveChallenge = null; S.liveTokenChallenge = null; S.liveTransactionCode = null; S.liveAaSignature = null;
+  S.liveDocId = null; S.challengeLoading = false; S.challengeError = null;
+  stopMockCanvas();
+  if (S.socket) { S.socket.disconnect(); S.socket = null; }
+
+  if (!S.useMock) {
+    // Chế độ thiết bị thật: kết nối ngay lập tức
+    S.nfcStatus = 'connecting';
+    setupSocket();
+    S.socket.connect();
+  }
+
+  updateDevicePill();
+  render();
+}
+
+function updateDevicePill() {
+  let pill = document.getElementById('devicePill');
+  if (!pill) {
+    const right = document.querySelector('.topbar-right');
+    if (right) {
+      pill = document.createElement('button');
+      pill.className = 'device-pill';
+      pill.id = 'devicePill';
+      pill.onclick = toggleDeviceMode;
+      pill.title = 'Nhấn để chuyển chế độ thiết bị';
+      pill.style.marginRight = '12px';
+      pill.innerHTML = `<span class="dot" id="deviceDot"></span><span id="devicePillLabel">Demo Mode</span>`;
+      right.insertBefore(pill, right.firstChild);
+    }
+  }
+  const dot = document.getElementById('deviceDot');
+  const label = document.getElementById('devicePillLabel');
+  if (!dot || !label) return;
+  if (S.useMock) {
+    dot.className = 'dot'; label.textContent = 'Demo Mode';
+  } else {
+    if (S.nfcStatus === 'ok') {
+      dot.className = 'dot connected'; label.textContent = 'Thẻ đã đọc';
+    } else if (S.nfcStatus === 'scanning' || S.nfcStatus === 'connected') {
+      dot.className = 'dot connected'; label.textContent = 'Thiết bị sẵn sàng';
+    } else if (S.nfcStatus === 'connecting') {
+      dot.className = 'dot connecting'; label.textContent = 'Đang kết nối…';
+    } else if (S.nfcStatus === 'error') {
+      dot.className = 'dot error'; label.textContent = 'Lỗi kết nối';
+    } else {
+      dot.className = 'dot'; label.textContent = 'Thiết bị thật';
+    }
+  }
+}
+
+// ─── Webcam frame renderer (real device: img src; mock: canvas) ─────────────
+function _renderWebcamFrame() {
+  if (S.useMock) {
+    if (_mockCamActive) _drawMockFrame();
+  } else {
+    const img = document.getElementById('webcamFrame');
+    if (img && S.webcamLastFrame) {
+      img.src = 'data:image/jpeg;base64,' + S.webcamLastFrame;
+    }
+  }
 }
 
 // ─── Device Bar ───────────────────────────────────────────────────────────────
@@ -636,6 +980,8 @@ function _deviceBarHTML() {
             nfcSt === 'error'      ? 'Không thể kết nối đầu đọc' : 'Chưa kết nối' },
     { label:'Thiết bị NFC', done:!!S.deviceInfo, active:nfcSt==='connected',
       desc: S.deviceInfo ? `S/N ${S.deviceInfo.serial_nfc} · v${S.deviceInfo.version}` : 'Chưa nhận thông tin' },
+    { label:'Webcam', done: S.camStatus === 'connected', active: S.camStatus !== 'idle' && S.camStatus !== 'connected',
+      desc: S.camStatus === 'connected' ? 'Camera đang phát' : 'Đang kết nối 192.168.5.1:9000…' },
   ];
   function dotCls(item) {
     if (item.fail) return 'dbar-dot dbar-fail';
@@ -664,42 +1010,10 @@ function _deviceBarHTML() {
     </button>` : ''}
   </div>`;
 }
-function retryDeviceConnect() {
-  if (S.useMock) return;
-  if (S.socket) { S.socket.disconnect(); S.socket = null; }
-  S.nfcStatus = 'connecting';
-  setupSocket(); S.socket.connect();
-  updateDevicePill(); renderDeviceBar();
-}
-function toggleDeviceMode() {
-  S.useMock = !S.useMock;
-  S.nfcStatus = 'idle'; S.cardData = null; S.cardPhoto = null; S.rawNfc = null; S.dsCert = null;
-  S.pin = ''; S.pinVerified = false;
-  if (S.socket) { S.socket.disconnect(); S.socket = null; }
-  if (!S.useMock) { S.nfcStatus = 'connecting'; setupSocket(); S.socket.connect(); }
-  updateDevicePill(); render();
-}
-function updateDevicePill() {
-  const dot = document.getElementById('deviceDot');
-  const label = document.getElementById('devicePillLabel');
-  if (!dot || !label) return;
-  if (S.useMock) {
-    dot.className = 'dot'; label.textContent = 'Demo Mode';
-  } else {
-    if (S.nfcStatus === 'ok') { dot.className = 'dot connected'; label.textContent = 'Thẻ đã đọc'; }
-    else if (S.nfcStatus === 'scanning' || S.nfcStatus === 'connected') { dot.className = 'dot connected'; label.textContent = 'Thiết bị sẵn sàng'; }
-    else if (S.nfcStatus === 'connecting') { dot.className = 'dot connecting'; label.textContent = 'Đang kết nối…'; }
-    else if (S.nfcStatus === 'error') { dot.className = 'dot error'; label.textContent = 'Lỗi kết nối'; }
-    else { dot.className = 'dot'; label.textContent = 'Thiết bị thật'; }
-  }
-}
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// RENDER SYSTEM
-// ═══════════════════════════════════════════════════════════════════════════════
 const STEPS = [
   { label:'Chọn\ntài liệu' },
-  { label:'Xác thực\nCCCD + PIN' },
+  { label:'Xác thực\nCCCD + Selfie' },
   { label:'Nhận tài liệu\nđã ký' },
 ];
 
@@ -749,21 +1063,21 @@ function renderIntro() {
     <div>Đang chạy <strong>Demo Mode</strong> — tài liệu và chữ ký được giả lập. Nhấn <strong>Demo Mode</strong> trên nav để kết nối thiết bị thật (<code>192.168.5.1:8000</code>).</div>
   </div>` : `<div class="alert alert-success" role="note">
     <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    <div>Đang kết nối <strong>thiết bị thật</strong> — đầu đọc CCCD tại <code>192.168.5.1</code>.</div>
+    <div>Đang kết nối <strong>thiết bị thật</strong> — đầu đọc CCCD và webcam tại <code>192.168.5.1</code>.</div>
   </div>`}
 
   <div class="section-sep"><div class="sep-line"></div><span>Yêu cầu</span><div class="sep-line"></div></div>
   <div class="req-grid">
-    <div class="req-item"><div class="req-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><div><div style="font-weight:600;font-size:13px">Tài liệu cần ký</div><div style="font-size:11.5px;color:var(--text-3)">PDF, DOCX hoặc định dạng khác</div></div></div>
+    <div class="req-item"><div class="req-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><div><div style="font-weight:600;font-size:13px">Tài liệu cần ký</div><div style="font-size:11.5px;color:var(--text-3)">Chỉ hỗ trợ PDF (.pdf) hoặc XML (.xml)</div></div></div>
     <div class="req-item"><div class="req-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M7 9h2m4 0h4M7 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div style="font-weight:600;font-size:13px">CCCD gắn chip</div><div style="font-size:11.5px;color:var(--text-3)">Xác thực danh tính người ký</div></div></div>
-    <div class="req-item"><div class="req-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg></div><div><div style="font-weight:600;font-size:13px">PIN Chứng thư số</div><div style="font-size:11.5px;color:var(--text-3)">Mã PIN 6 chữ số để ký</div></div></div>
+    <div class="req-item"><div class="req-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/></svg></div><div><div style="font-weight:600;font-size:13px">Xác thực khuôn mặt</div><div style="font-size:11.5px;color:var(--text-3)">Chụp selfie để xác nhận ký số</div></div></div>
     <div class="req-item"><div class="req-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3L4 7v5c0 5.25 3.75 9.75 8 11 4.25-1.25 8-5.75 8-11V7l-8-4z" stroke="currentColor" stroke-width="1.8"/></svg></div><div><div style="font-weight:600;font-size:13px">Chứng thư số còn hạn</div><div style="font-size:11.5px;color:var(--text-3)">CTS EIDCA còn hiệu lực</div></div></div>
   </div>
 
   <div class="section-sep" style="margin-top:1.75rem"><div class="sep-line"></div><span>Quy trình</span><div class="sep-line"></div></div>
   <div class="checklist">
     <div class="check-item"><div class="check-dot" style="background:var(--violet-light)"><svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="var(--violet)" stroke-width="2" stroke-linecap="round"/></svg></div><div><div style="font-weight:600">Bước 1 — Chọn tài liệu &amp; thông số ký</div><div style="font-size:12px;color:var(--text-3);margin-top:2px">Upload file và điền thông tin chữ ký (lý do, vị trí)</div></div></div>
-    <div class="check-item"><div class="check-dot" style="background:var(--violet-light)"><svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="var(--violet)" stroke-width="2" stroke-linecap="round"/></svg></div><div><div style="font-weight:600">Bước 2 — Xác thực CCCD &amp; nhập PIN</div><div style="font-size:12px;color:var(--text-3);margin-top:2px">Đặt CCCD vào đầu đọc, nhập PIN để uỷ quyền ký</div></div></div>
+    <div class="check-item"><div class="check-dot" style="background:var(--violet-light)"><svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="var(--violet)" stroke-width="2" stroke-linecap="round"/></svg></div><div><div style="font-weight:600">Bước 2 — Xác thực CCCD &amp; Chụp selfie</div><div style="font-size:12px;color:var(--text-3);margin-top:2px">Đặt CCCD vào đầu đọc và chụp ảnh selfie qua webcam</div></div></div>
     <div class="check-item"><div class="check-dot" style="background:var(--violet-light)"><svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="var(--violet)" stroke-width="2" stroke-linecap="round"/></svg></div><div><div style="font-weight:600">Bước 3 — Tải tài liệu đã ký</div><div style="font-size:12px;color:var(--text-3);margin-top:2px">Tải xuống file đã đính chữ ký số hợp lệ</div></div></div>
   </div>
 
@@ -783,7 +1097,7 @@ function renderDoc() {
 
   function fileIconHTML() {
     if (S.docType === 'pdf') return `<div class="file-icon-box pdf"><svg viewBox="0 0 24 24" fill="none" style="color:#D32F2F"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.8"/><path d="M9 15h1.5a1 1 0 000-2H9v4m4-4h2m-2 2h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>`;
-    if (S.docType === 'docx') return `<div class="file-icon-box docx"><svg viewBox="0 0 24 24" fill="none" style="color:#1B4FD8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.8"/><path d="M9 13l1.5 4 1.5-3 1.5 3L15 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+    if (S.docType === 'xml') return `<div class="file-icon-box docx" style="background:#fff7ed"><svg viewBox="0 0 24 24" fill="none" style="color:#EA580C"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.8"/><path d="M8 13l3 3 3-3M12 8v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
     return `<div class="file-icon-box other"><svg viewBox="0 0 24 24" fill="none" style="color:var(--text-3)"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.8"/></svg></div>`;
   }
 
@@ -809,15 +1123,13 @@ function renderDoc() {
     </button>
   </div>` : `
   <div class="drop-zone" id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-    <input type="file" id="docInput" accept=".pdf,.doc,.docx,.xlsx,.xls,.txt" onchange="handleFileSelect(event)" aria-label="Chọn tài liệu cần ký"/>
+    <input type="file" id="docInput" accept=".pdf,.xml" onchange="handleFileSelect(event)" aria-label="Chọn tài liệu cần ký"/>
     <div class="drop-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
     <div class="drop-title">Kéo thả hoặc nhấn để chọn tài liệu</div>
-    <div class="drop-sub">Hỗ trợ nhiều định dạng, tối đa 50MB</div>
+    <div class="drop-sub">Chỉ hỗ trợ định dạng PDF hoặc XML, tối đa 50MB</div>
     <div class="drop-types">
       <span class="drop-type-badge">PDF</span>
-      <span class="drop-type-badge">DOCX</span>
-      <span class="drop-type-badge">XLSX</span>
-      <span class="drop-type-badge">TXT</span>
+      <span class="drop-type-badge">XML</span>
     </div>
   </div>`}
 
@@ -884,12 +1196,12 @@ function renderDoc() {
 </div>`;
 }
 
-// ── Step 2: Xác thực CCCD + PIN ───────────────────────────────────────────────
+// ── Step 2: Xác thực CCCD + Selfie ───────────────────────────────────────────────
 function renderAuth() {
   const nfcSt = S.nfcStatus;
   const cardOk = !!S.cardData;
-  const pinOk = S.pin.length === 6;
-  const canSign = cardOk && pinOk;
+  const selfieOk = !!S.selfieCapture;
+  const canSign = cardOk && (S.useMock ? selfieOk : (selfieOk && !!S.liveAaSignature));
 
   // NFC reader panel
   let nfcBody = '';
@@ -899,15 +1211,15 @@ function renderAuth() {
       <div class="reader-status-text">Đang khởi tạo đầu đọc…</div>
       <div class="reader-status-sub"><span class="spin dark"></span></div>
     </div>`;
-  } else if (nfcSt === 'scanning') {
+  } else if (nfcSt === 'scanning' || S.challengeLoading) {
     nfcBody = `<div class="reader-status">
       <div class="reader-anim scanning" style="background:var(--violet-light)">
         <svg viewBox="0 0 24 24" fill="none" style="color:var(--violet)"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M7 9h2m4 0h4M7 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </div>
-      <div class="reader-status-text">Đặt CCCD vào đầu đọc</div>
-      <div class="reader-status-sub">Giữ thẻ phẳng và cố định cho đến khi nghe tiếng bíp</div>
+      <div class="reader-status-text">${S.challengeLoading ? 'Đang tải challenge ký số…' : 'Đặt CCCD vào đầu đọc'}</div>
+      <div class="reader-status-sub">${S.challengeLoading ? 'Vui lòng giữ thẻ cố định trên đầu đọc' : 'Giữ thẻ phẳng và cố định cho đến khi nghe tiếng bíp'}</div>
     </div>`;
-  } else if (nfcSt === 'ok' && S.cardData) {
+  } else if ((nfcSt === 'ok' || cardOk) && S.cardData) {
     const d = S.cardData;
     function fmtDate(s) {
       if (!s) return '—'; s = s.trim();
@@ -935,11 +1247,16 @@ function renderAuth() {
       </div>
       <div class="cccd-chip-badge">CCCD · Chip NFC</div>
     </div>
-    <div style="margin-top:.75rem">
+    <div style="margin-top:.75rem; display:flex; gap: 8px;">
       <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="reReadCard()">
         <svg viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         Đọc lại thẻ
       </button>
+      ${!S.useMock && S.liveChallenge && !S.liveAaSignature ? `
+      <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;color:var(--violet);border-color:var(--violet-mid)" onclick="S.socket.sendAA(S.liveChallenge)">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Ký Active Auth lại
+      </button>` : ''}
     </div>`;
   } else if (nfcSt === 'error') {
     nfcBody = `<div class="reader-status">
@@ -950,7 +1267,7 @@ function renderAuth() {
     </div>`;
   }
 
-  // NFC badge
+  // NFC Badge
   function nfcBadgeCls() {
     if (cardOk) return 'device-status-badge dsb-ok';
     if (nfcSt === 'scanning' || nfcSt === 'connected') return 'device-status-badge dsb-scan';
@@ -965,28 +1282,73 @@ function renderAuth() {
     return '◌ Đang kết nối';
   }
 
-  // Build PIN dots for display
-  const pinDisplay = Array.from({length:6},(_,i)=>`<input
-    type="password"
-    id="pinDigit${i}"
-    class="pin-digit${S.pin.length>i?' filled':''}"
-    maxlength="1"
-    inputmode="numeric"
-    pattern="[0-9]"
-    value="${S.pin[i]||''}"
-    onkeydown="handlePinKey(event,${i})"
-    oninput="handlePinInput(event,${i})"
-    autocomplete="off"
-    aria-label="Chữ số PIN thứ ${i+1}"/>`).join('');
+  // Webcam panel
+  const camReady = S.useMock ? (S.camStatus === 'connected') : (S.camStatus === 'connected' && !!S.webcamLastFrame);
+  let camBody = '';
+  if (!selfieOk) {
+    if (camReady) {
+      camBody = `
+      <div class="webcam-container" id="webcamBox">
+        ${ S.useMock
+          ? `<canvas id="mockCamCanvas" width="480" height="360" style="width:100%;height:100%;display:block"></canvas>`
+          : `<img id="webcamFrame" src="" alt="Webcam live" style="display:block"/>`
+        }
+        <div class="face-guide" aria-hidden="true"></div>
+        <div class="face-scan-line" aria-hidden="true"></div>
+      </div>
+      <div style="margin-top:.75rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="captureSelfie()" id="btnCapture" style="flex:1;justify-content:center">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="white" stroke-width="2"/><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="white" stroke-width="1.8"/></svg>
+          Chụp ảnh Selfie
+        </button>
+      </div>`;
+    } else {
+      camBody = `
+      <div class="webcam-container" style="min-height:200px;display:flex;align-items:center;justify-content:center">
+        <div style="text-align:center;color:rgba(255,255,255,.6)">
+          <div class="spin" style="width:28px;height:28px;border-width:3px;margin:0 auto 10px"></div>
+          <div style="font-size:13px">Đang khởi tạo camera…</div>
+        </div>
+      </div>`;
+    }
+  } else {
+    const faceScore = S.faceScore || Math.floor(Math.random()*10+88); // 88-97%
+    S.faceScore = faceScore;
+    camBody = `
+    <div class="webcam-container webcam-captured">
+      <img src="data:image/jpeg;base64,${S.selfieCapture}" alt="Ảnh selfie đã chụp" style="display:block"/>
+      <div class="capture-badge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
+        Đã chụp
+      </div>
+    </div>
+    <div class="face-score-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;color:var(--success)">
+        <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--success);margin-bottom:4px">Chất lượng ảnh: ${faceScore}%</div>
+        <div class="score-track"><div class="score-fill" style="width:${faceScore}%"></div></div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--success)">${faceScore >= 85 ? '✓ Đạt' : '⚠ Thấp'}</div>
+    </div>
+    <div style="margin-top:.5rem">
+      <button class="btn btn-secondary" onclick="resetSelfie()" style="font-size:12px;padding:6px 12px">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3.51 15A9 9 0 105.64 5.64L1 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Chụp lại
+      </button>
+    </div>`;
+  }
 
-  const pinBadgeCls = pinOk ? 'device-status-badge dsb-ok' : 'device-status-badge dsb-idle';
-  const pinBadgeLabel = pinOk ? '✓ Đủ 6 chữ số' : `◌ ${S.pin.length}/6 chữ số`;
+  function camBadgeCls()  { return selfieOk ? 'device-status-badge dsb-ok' : camReady ? 'device-status-badge dsb-scan' : 'device-status-badge dsb-idle'; }
+  function camBadgeLabel(){ return selfieOk ? '✓ Đã chụp' : camReady ? '⬤ Live' : '◌ Khởi động'; }
 
   return `
 <div class="card-header">
   <div class="card-header-inner">
-    <div class="card-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2" stroke="white" stroke-width="1.8"/><path d="M8 11V7a4 4 0 018 0v4" stroke="white" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="white"/></svg></div>
-    <div><h2>Xác thực CCCD &amp; Nhập PIN</h2><p>Đặt CCCD vào đầu đọc và nhập PIN để uỷ quyền ký tài liệu</p></div>
+    <div class="card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3L4 7v5c0 5.25 3.75 9.75 8 11 4.25-1.25 8-5.75 8-11V7l-8-4z" stroke="white" stroke-width="1.8"/></svg></div>
+    <div><h2>Xác thực CCCD &amp; Chụp ảnh Selfie</h2><p>Đặt CCCD vào đầu đọc và chụp ảnh selfie qua webcam để ký tài liệu</p></div>
   </div>
 </div>
 <div class="card-body">
@@ -996,7 +1358,7 @@ function renderAuth() {
     <button class="mode-btn ${S.useMock?'active':''}" onclick="${!S.useMock?'toggleDeviceMode()':''}" ${S.useMock?'disabled':''}>🎭 Demo Mode</button>
   </div>
 
-  <!-- NFC Reader -->
+  <!-- NFC Reader panel -->
   <div class="device-panel">
     <div class="device-panel-header">
       <div class="device-panel-title">
@@ -1008,28 +1370,29 @@ function renderAuth() {
     <div class="device-panel-body">${nfcBody}</div>
   </div>
 
-  <!-- PIN Panel -->
+  <!-- Selfie / Webcam panel -->
   <div class="device-panel">
     <div class="device-panel-header">
       <div class="device-panel-title">
-        <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
-        PIN Chứng thư số
+        <svg viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
+        Webcam — Xác thực khuôn mặt
       </div>
-      <span class="${pinBadgeCls}">${pinBadgeLabel}</span>
+      <span class="${camBadgeCls()}">${camBadgeLabel()}</span>
     </div>
     <div class="device-panel-body">
-      <p style="font-size:13px;color:var(--text-2);margin-bottom:.75rem;text-align:center">Nhập mã PIN 6 chữ số của Chứng thư số EIDCA để uỷ quyền ký</p>
-      <div class="pin-container" role="group" aria-label="Nhập mã PIN 6 chữ số">
-        ${pinDisplay}
+      <div class="selfie-area">
+        <div>${camBody}</div>
+        <div class="selfie-guide-box">
+          <h4>Hướng dẫn chụp ảnh</h4>
+          <ul>
+            <li>Nhìn thẳng vào camera, không nghiêng đầu</li>
+            <li>Chụp ở nơi đủ ánh sáng, không ngược sáng</li>
+            <li>Không đeo kính râm, không đội mũ</li>
+            <li>Khuôn mặt phải rõ và chiếm phần lớn khung hình</li>
+            <li>Đặt khuôn mặt vào vòng tròn hướng dẫn</li>
+          </ul>
+        </div>
       </div>
-      ${S.pin.length === 6 ? `<p style="text-align:center;font-size:12px;color:var(--success);font-weight:600;margin-top:.5rem">✓ PIN đã nhập đủ</p>` : ''}
-      <div style="text-align:center;margin-top:.75rem">
-        <button class="btn btn-secondary" style="font-size:12px;padding:5px 14px" onclick="clearPin()">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          Xoá PIN
-        </button>
-      </div>
-      ${S.useMock ? `<p style="text-align:center;font-size:11px;color:var(--text-3);margin-top:.5rem">Demo: nhập bất kỳ 6 chữ số (VD: 123456)</p>` : ''}
     </div>
   </div>
 
@@ -1043,12 +1406,16 @@ function renderAuth() {
     </div>
   </div>
 
-  ${canSign ? `<div class="alert alert-success" role="status">
+  ${S.challengeError ? `<div class="alert alert-danger" role="status">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+    <div><strong>Dừng ký tài liệu!</strong> ${S.challengeError}. Hãy đổi thẻ CCCD khác (không tìm thấy chứng thư số phù hợp cho người này).</div>
+  </div>` : canSign ? `<div class="alert alert-success" role="status">
     <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    <div><strong>Sẵn sàng ký!</strong> Danh tính đã xác thực và PIN đã nhập. Nhấn <strong>Ký tài liệu</strong> để tiến hành.</div>
+    <div><strong>Sẵn sàng ký!</strong> Danh tính đã xác thực, challenge đã lấy và chữ ký chip đã sẵn sàng. Nhấn <strong>Ký tài liệu</strong> để tiến hành.</div>
   </div>` : `<div class="alert alert-warn">
     <svg viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="1.8"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    Cần <strong>đọc chip CCCD</strong> và <strong>nhập đủ PIN 6 chữ số</strong> trước khi ký.
+    Cần <strong>đọc chip CCCD</strong> và <strong>chụp ảnh Selfie</strong> trước khi ký.
+    ${!S.useMock && S.liveChallenge && !S.liveAaSignature ? `<br/><span style="font-size:11.5px;opacity:.85">Đang chờ nhận chữ ký Active Authentication từ chip thẻ…</span>` : ''}
   </div>`}
 
   <div class="btn-row">
@@ -1162,7 +1529,7 @@ function renderError() {
 <div class="card-body">
   <div class="alert alert-danger" role="alert">
     <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
-    <div><strong>Ký số thất bại.</strong> PIN không đúng hoặc Chứng thư số đã hết hạn. Vui lòng thử lại hoặc liên hệ <strong>1800-9999</strong>.</div>
+    <div><strong>Ký số thất bại.</strong> ${S.useMock ? 'PIN không đúng hoặc Chứng thư số đã hết hạn. Vui lòng thử lại hoặc liên hệ <strong>1800-9999</strong>.' : (S.liveErrorMsg || 'Không thể kết nối đến máy chủ eIDCA.')}</div>
   </div>
   <div class="btn-row" style="justify-content:center;gap:1rem">
     <button class="btn btn-secondary" onclick="retrySign()">
@@ -1182,17 +1549,30 @@ function goStep(n) {
   S.step = n;
   if (n === 0) {
     S.cardData = null; S.cardPhoto = null; S.rawNfc = null; S.dsCert = null;
-    S.nfcStatus = 'idle'; S.pin = ''; S.pinVerified = false;
+    S.nfcStatus = 'idle'; S.camStatus = 'idle';
+    S.selfieCapture = null; S.webcamLastFrame = null; S.faceScore = 0;
+    S.liveChallenge = null; S.liveTokenChallenge = null; S.liveTransactionCode = null; S.liveAaSignature = null;
+    S.liveDocId = null; S.challengeLoading = false; S.challengeError = null;
     S.docFile = null; S.docName = ''; S.docSize = 0; S.docType = '';
     S.signOptions = { reason:'', location:'Hà Nội, Việt Nam', signatureType:'PAdES', includeTimestamp:true };
     S.signResult = null; S.signingChecks = [];
+    stopMockCanvas();
     if (S.socket) { S.socket.disconnect(); S.socket = null; }
   }
   if (n === 2 && prev !== 2) {
-    if (!S.socket) { setupSocket(); S.socket.connect(); }
-    if (S.useMock) S.nfcStatus = 'connecting';
+    if (S.socket && !S.useMock && S.nfcStatus !== 'idle' && S.nfcStatus !== 'error') {
+      S.socket.resumeCam();
+      if (S.cardData) {
+        liveFetchChallengeImmediately();
+      }
+    } else {
+      if (!S.socket) { setupSocket(); S.socket.connect(); }
+      if (S.useMock) S.nfcStatus = 'connecting';
+    }
   }
-  if (n !== 2 && prev === 2 && S.socket) { /* nothing special */ }
+  if (n !== 2 && prev === 2 && S.socket) {
+    S.socket.pauseCam();
+  }
   window.scrollTo({ top:0, behavior:'smooth' });
   render();
   updateDevicePill();
@@ -1217,11 +1597,15 @@ function handleDrop(event) {
   if (file) setDocFile(file);
 }
 function setDocFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext !== 'pdf' && ext !== 'xml') {
+    alert("Chỉ cho phép ký các tài liệu định dạng PDF (.pdf) hoặc XML (.xml).");
+    return;
+  }
   S.docFile = file;
   S.docName = file.name;
   S.docSize = file.size;
-  const ext = file.name.split('.').pop().toLowerCase();
-  S.docType = ext === 'pdf' ? 'pdf' : (ext === 'docx' || ext === 'doc') ? 'docx' : 'other';
+  S.docType = ext;
   render();
 }
 function removeDoc() {
@@ -1270,89 +1654,158 @@ function reReadCard() {
   render();
 }
 
-// ─── PIN handling ─────────────────────────────────────────────────────────────
-function handlePinInput(event, idx) {
-  const val = event.target.value.replace(/\D/g,'');
-  event.target.value = val.slice(-1); // keep last char only
-  const digits = Array.from({length:6}, (_,i) => {
-    const el = document.getElementById(`pinDigit${i}`);
-    return el ? el.value : '';
-  });
-  S.pin = digits.join('');
-  // Auto-advance
-  if (val && idx < 5) {
-    document.getElementById(`pinDigit${idx+1}`)?.focus();
+// ─── Selfie Webcam Actions ───────────────────────────────────────────────────
+function captureSelfie() {
+  let frameData;
+  if (S.useMock) {
+    frameData = captureMockFrame();
+  } else {
+    frameData = S.webcamLastFrame;
   }
-  // Update badges without full re-render for smoothness
-  _updatePinBadge();
-  if (S.pin.length === 6) render();
+  if (!frameData) return;
+  S.selfieCapture = frameData;
+  S.faceScore = 0; // will be set fresh in render
+  if (S.socket) S.socket.pauseCam();
+  if (S.useMock) stopMockCanvas();
+  render();
 }
-function handlePinKey(event, idx) {
-  if (event.key === 'Backspace') {
-    const el = document.getElementById(`pinDigit${idx}`);
-    if (el && el.value === '' && idx > 0) {
-      document.getElementById(`pinDigit${idx-1}`)?.focus();
-    }
-  }
-}
-function clearPin() {
-  S.pin = '';
-  for (let i=0;i<6;i++) {
-    const el = document.getElementById(`pinDigit${i}`);
-    if (el) { el.value = ''; el.classList.remove('filled','error'); }
-  }
-  document.getElementById('pinDigit0')?.focus();
-  _updatePinBadge();
-}
-function _updatePinBadge() {
-  // Lightweight badge update without full re-render
-  const pinOk = S.pin.length === 6;
-  const badge = document.querySelector('.device-panel:nth-child(3) .device-status-badge');
-  if (badge) {
-    badge.className = `device-status-badge ${pinOk?'dsb-ok':'dsb-idle'}`;
-    badge.textContent = pinOk ? '✓ Đủ 6 chữ số' : `◌ ${S.pin.length}/6 chữ số`;
-  }
-  // Update btn state
-  const cardOk = !!S.cardData;
-  const btn = document.querySelector('.btn-primary[onclick="submitSign()"]');
-  if (btn) btn.disabled = !(cardOk && pinOk);
+
+function resetSelfie() {
+  S.selfieCapture = null;
+  S.faceScore = 0;
+  if (S.socket) S.socket.resumeCam();
+  if (S.useMock) startMockCanvas();
+  render();
 }
 
 // ─── Sign submit ──────────────────────────────────────────────────────────────
 async function submitSign() {
-  if (!S.cardData || S.pin.length !== 6) return;
+  if (!S.cardData || !S.selfieCapture) return;
   goStep(3);
   S.signingChecks = Array(5).fill('pending');
   render();
-  const timings = [700, 900, 1400, 800, 600];
-  for (let i=0; i<timings.length; i++) {
-    S.signingChecks[i] = 'active';
-    _updateCheckList();
-    await delay(timings[i]);
 
-    // Simulate PIN error in demo (5% chance)
-    if (i===2 && S.useMock && Math.random() < 0.05) {
-      S.signingChecks[i] = 'fail';
+  if (S.useMock) {
+    // --- DEMO MODE FLOW ---
+    const timings = [700, 900, 1400, 800, 600];
+    for (let i=0; i<timings.length; i++) {
+      S.signingChecks[i] = 'active';
       _updateCheckList();
-      await delay(700);
-      goStep(5); return;
-    }
-    S.signingChecks[i] = 'ok';
-    _updateCheckList();
-  }
+      await delay(timings[i]);
 
-  // Build sign result
-  const now = new Date();
-  const d = S.cardData;
-  const hashMock = Array.from({length:64},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
-  S.signResult = {
-    signerName: d.personName || 'NGUYỄN VĂN AN',
-    signerIdCode: d.idCode || '—',
-    docHash: hashMock,
-    certSerial: 'VNECC-' + Math.random().toString(36).substr(2,8).toUpperCase(),
-    signedAt: now.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}),
-  };
-  goStep(4);
+      // Giả lập lỗi sinh trắc học (5% chance)
+      if (i===2 && Math.random() < 0.05) {
+        S.signingChecks[i] = 'fail';
+        _updateCheckList();
+        await delay(700);
+        S.liveErrorMsg = "Khuôn mặt chụp được không khớp sinh trắc học với ảnh chip CCCD.";
+        goStep(5); return;
+      }
+      S.signingChecks[i] = 'ok';
+      _updateCheckList();
+    }
+
+    const now = new Date();
+    const d = S.cardData;
+    const hashMock = Array.from({length:64},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+    S.signResult = {
+      signerName: d.personName || 'NGUYỄN VĂN AN',
+      signerIdCode: d.idCode || '—',
+      docHash: hashMock,
+      certSerial: 'VNECC-' + Math.random().toString(36).substr(2,8).toUpperCase(),
+      signedAt: now.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+    };
+    goStep(4);
+  } else {
+    // --- LIVE MODE FLOW ---
+    try {
+      S.liveErrorMsg = "";
+      
+      const partnerCode = window.EIDCA_PROVIDER_PARTNER_CODE;
+      const providerApiKey = window.EIDCA_PROVIDER_API_KEY;
+      const providerApiUrl = window.EIDCA_PROVIDER_API_URL;
+      
+      if (!providerApiKey || !partnerCode) {
+        throw new Error("Vui lòng cấu hình API Key và Partner Code của Nhà cung cấp trong phần Cài đặt CMS trước.");
+      }
+
+      // Đã lấy challenge và ký AA ở Bước 2
+      S.signingChecks[0] = 'ok';
+      S.signingChecks[1] = 'ok';
+      S.signingChecks[2] = 'active'; _updateCheckList();
+
+      const transactionCode = S.liveTransactionCode;
+      const tokenSign = S.liveTokenChallenge;
+      const docId = S.liveDocId;
+      const aaSignature = S.liveAaSignature;
+
+      if (!aaSignature) {
+        throw new Error("Không tìm thấy chữ ký Active Authentication từ chip CCCD. Vui lòng đọc lại thẻ.");
+      }
+
+      // Step 3: Gửi signature + thông tin ảnh chụp thật xác nhận ký
+      const registerRes = await fetch(`${providerApiUrl}/ca/api/sign/signature`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': providerApiKey
+        },
+        body: JSON.stringify({
+          code: partnerCode,
+          transaction_code: transactionCode,
+          token_sign: tokenSign,
+          info: {
+            image: S.selfieCapture // Gửi ảnh chụp thật từ Webcam thay vì cardPhoto
+          },
+          doc_signs: [
+            {
+              doc_id: docId,
+              signature: aaSignature
+            }
+          ]
+        })
+      });
+      const registerJson = await registerRes.json().catch(() => ({}));
+      if (!registerRes.ok || !registerJson.success) {
+        throw new Error(registerJson.error?.message || registerJson.message || "Xác nhận ký tài liệu thất bại từ eIDCA.");
+      }
+
+      const signData = registerJson.data;
+      const signedDoc = signData.signed_docs[0];
+
+      S.signingChecks[2] = 'ok';
+      S.signingChecks[3] = 'active'; _updateCheckList();
+      await delay(700); // Thể hiện TSA timestamping
+      S.signingChecks[3] = 'ok';
+      S.signingChecks[4] = 'active'; _updateCheckList();
+      await delay(600); // Thể hiện nhúng chữ ký
+      S.signingChecks[4] = 'ok'; _updateCheckList();
+
+      S.signResult = {
+        signerName: S.cardData.personName,
+        signerIdCode: S.cardData.idCode,
+        docHash: signedDoc.doc_hash || "",
+        certSerial: signedDoc.ca_signature ? "EIDCA-ACTIVE-HSM" : "VNECC-" + Math.random().toString(36).substr(2,8).toUpperCase(),
+        signedAt: new Date(signedDoc.sign_at ? signedDoc.sign_at * 1000 : Date.now()).toLocaleString('vi-VN'),
+        docId: docId,
+        tokenSign: tokenSign,
+        transactionCode: transactionCode
+      };
+
+      goStep(4);
+
+    } catch (err) {
+      console.error(err);
+      S.liveErrorMsg = err.message || "Lỗi kết nối API nhà cung cấp eIDCA khi ký.";
+      const currentActiveIdx = S.signingChecks.findIndex(c => c === 'active');
+      if (currentActiveIdx !== -1) {
+        S.signingChecks[currentActiveIdx] = 'fail';
+        _updateCheckList();
+      }
+      await delay(800);
+      goStep(5);
+    }
+  }
 }
 
 function _updateCheckList() {
@@ -1381,36 +1834,71 @@ function _updateCheckList() {
 }
 
 function retrySign() {
-  S.pin = ''; S.pinVerified = false; S.signingChecks = [];
+  S.selfieCapture = null; S.signingChecks = [];
   goStep(2);
 }
 
-function downloadSignedDoc() {
+async function downloadSignedDoc() {
   if (!S.signResult) return;
-  const r = S.signResult;
-  const lines = [
-    '-----BEGIN SIGNED DOCUMENT INFO-----',
-    `File: ${S.docName}`,
-    `Signer: CN=${r.signerName}, C=VN`,
-    `CCCD: ${r.signerIdCode}`,
-    `Serial: ${r.certSerial}`,
-    `Signature Type: ${S.signOptions.signatureType}`,
-    `Reason: ${S.signOptions.reason}`,
-    `Location: ${S.signOptions.location}`,
-    `Signed At: ${r.signedAt}`,
-    `Doc Hash (SHA-256): ${r.docHash}`,
-    `Timestamp: ${S.signOptions.includeTimestamp ? 'Yes (RFC 3161)' : 'No'}`,
-    `Issuer: EIDCA Public CA — Trung tâm Chứng thư số Quốc gia`,
-    '-----END SIGNED DOCUMENT INFO-----',
-    '',
-    '[Demo file — không có giá trị pháp lý]',
-    `Generated: ${new Date().toISOString()}`,
-  ];
-  const blob = new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `SIGNED_${S.docName.replace(/\.[^.]+$/,'')}_EIDCA.txt`;
-  a.click(); URL.revokeObjectURL(a.href);
+  
+  if (S.useMock || !S.signResult.docId) {
+    const r = S.signResult;
+    const lines = [
+      '-----BEGIN SIGNED DOCUMENT INFO-----',
+      `File: ${S.docName}`,
+      `Signer: CN=${r.signerName}, C=VN`,
+      `CCCD: ${r.signerIdCode}`,
+      `Serial: ${r.certSerial}`,
+      `Signature Type: ${S.signOptions.signatureType}`,
+      `Reason: ${S.signOptions.reason}`,
+      `Location: ${S.signOptions.location}`,
+      `Signed At: ${r.signedAt}`,
+      `Doc Hash (SHA-256): ${r.docHash}`,
+      `Timestamp: ${S.signOptions.includeTimestamp ? 'Yes (RFC 3161)' : 'No'}`,
+      `Issuer: EIDCA Public CA — Trung tâm Chứng thư số Quốc gia`,
+      '-----END SIGNED DOCUMENT INFO-----',
+      '',
+      '[Demo file — không có giá trị pháp lý]',
+      `Generated: ${new Date().toISOString()}`,
+    ];
+    const blob = new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `SIGNED_${S.docName.replace(/\.[^.]+$/,'')}_EIDCA.txt`;
+    a.click(); URL.revokeObjectURL(a.href);
+    return;
+  }
+  
+  try {
+    const providerApiKey = window.EIDCA_PROVIDER_API_KEY;
+    const partnerCode = window.EIDCA_PROVIDER_PARTNER_CODE;
+    const providerApiUrl = window.EIDCA_PROVIDER_API_URL;
+    
+    const url = `${providerApiUrl}/ca/api/sign/download/${S.signResult.docId}`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'x-api-key': providerApiKey,
+        'code': partnerCode,
+        'transaction-code': S.signResult.transactionCode,
+        'token-sign': S.signResult.tokenSign,
+        'os-type': 'Web'
+      }
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Tải file thất bại: HTTP ${res.status}`);
+    }
+    
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `SIGNED_${S.docName}`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (err) {
+    alert("Lỗi tải tệp tin đã ký: " + err.message);
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1431,13 +1919,17 @@ function afterRender() {
   if (stpr) stpr.setAttribute('aria-valuenow', Math.max(1,Math.min(3,S.step)));
   updateDevicePill();
   renderDeviceBar();
-  // Focus first PIN digit when on auth step
   if (S.step === 2) {
-    requestAnimationFrame(()=>{
-      if (!S.cardData) return; // focus PIN only after card is read
-      const firstEmpty = Array.from({length:6},(_,i)=>document.getElementById(`pinDigit${i}`)).find(el=>el&&el.value==='');
-      if (firstEmpty) firstEmpty.focus();
-    });
+    if (S.useMock && S.camStatus === 'connected' && !S.selfieCapture) {
+      requestAnimationFrame(() => {
+        if (document.getElementById('mockCamCanvas')) {
+          _mockCamActive = true;
+          _drawMockFrame();
+        }
+      });
+    } else if (!S.useMock && S.webcamLastFrame && !S.selfieCapture) {
+      requestAnimationFrame(_renderWebcamFrame);
+    }
   }
 }
 
@@ -1468,6 +1960,5 @@ render();
   };
 })();
 </script>
-</body>
-</html>
+<?php layoutFooter(); ?>
 

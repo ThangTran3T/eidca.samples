@@ -26,10 +26,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'update_settings') {
-        $nfcUrl  = trim($_POST['nfc_url']  ?? '');
-        $camUrl  = trim($_POST['cam_url']  ?? '');
-        $newPw   = $_POST['new_password']  ?? '';
-        $confirm = $_POST['confirm_pw']    ?? '';
+        $nfcUrl      = trim($_POST['nfc_url']  ?? '');
+        $camUrl      = trim($_POST['cam_url']  ?? '');
+        $partnerCode = trim($_POST['partner_code'] ?? '');
+        $eidcaApiKey = trim($_POST['eidca_api_key'] ?? '');
+        $eidcaApiUrl = trim($_POST['eidca_api_url'] ?? '');
+        $newPw       = $_POST['new_password']  ?? '';
+        $confirm     = $_POST['confirm_pw']    ?? '';
 
         // Validate URLs
         foreach (['nfc_url' => $nfcUrl, 'cam_url' => $camUrl] as $field => $val) {
@@ -37,9 +40,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect('settings.html', "URL không hợp lệ: $field", 'error');
             }
         }
+        if ($eidcaApiUrl && !filter_var($eidcaApiUrl, FILTER_VALIDATE_URL)) {
+            redirect('settings.html', "API URL Nhà cung cấp không hợp lệ.", 'error');
+        }
 
-        DB::exec('UPDATE users SET nfc_url=?, cam_url=? WHERE id=?', [
-            $nfcUrl ?: null, $camUrl ?: null, $uid
+        DB::exec('UPDATE users SET nfc_url=?, cam_url=?, partner_code=?, eidca_api_key=?, eidca_api_url=? WHERE id=?', [
+            $nfcUrl ?: null, $camUrl ?: null, $partnerCode ?: null, $eidcaApiKey ?: null, $eidcaApiUrl ?: 'https://api.eidca.vn', $uid
         ]);
 
         // Change password?
@@ -54,7 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             DB::exec('UPDATE users SET password_hash=? WHERE id=?', [$hash, $uid]);
         }
 
-        logActivity('settings_update', ['nfc_url' => $nfcUrl, 'cam_url' => $camUrl, 'pw_changed' => $newPw !== '']);
+        logActivity('settings_update', [
+            'nfc_url' => $nfcUrl,
+            'cam_url' => $camUrl,
+            'partner_code' => $partnerCode,
+            'eidca_api_url' => $eidcaApiUrl,
+            'pw_changed' => $newPw !== ''
+        ]);
         refreshSession();
         redirect('settings.html', 'Cài đặt đã được lưu thành công.', 'success');
     }
@@ -153,6 +165,46 @@ layoutHeader('Cấu hình & API Key', 'settings');
           <span class="kw">const</span> <span class="var">CAM_URL</span> = <span class="str">'<?= e($row['cam_url'] ?: DEFAULT_CAM_URL) ?>'</span>;<br/>
           <span class="kw">const</span> <span class="var">EIDCA_API_KEY</span> = <span class="str">'<?= e($row['api_key']) ?>'</span>;
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Provider API config card -->
+  <div class="card">
+    <div class="card-header">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Cấu hình API Nhà cung cấp eIDCA (Provider API)
+      </h2>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13.5px;color:var(--text-3);margin-bottom:1.5rem;line-height:1.6">
+        Thông tin kết nối API thực tế của đơn vị đối tác, dùng để gọi trực tiếp các dịch vụ đăng ký và ký số của eIDCA.
+      </p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Mã đối tác (Partner Code)</label>
+          <input type="text" name="partner_code" class="form-control td-mono"
+                 placeholder="Ví dụ: PARTNER_DEMO_001"
+                 value="<?= e($row['partner_code'] ?? '') ?>"/>
+          <div class="form-hint">Mã đối tác/Sub-partner do eIDCA cấp.</div>
+        </div>
+        <div class="form-group">
+          <label>API Key (Nhà cung cấp)</label>
+          <input type="password" name="eidca_api_key" class="form-control td-mono"
+                 placeholder="API Key kết nối eIDCA..."
+                 value="<?= e($row['eidca_api_key'] ?? '') ?>"/>
+          <div class="form-hint">Khóa bảo mật kết nối API thực tế của eIDCA.</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>API Base URL (eIDCA URL)</label>
+        <input type="url" name="eidca_api_url" class="form-control td-mono"
+               placeholder="https://api.eidca.vn"
+               value="<?= e($row['eidca_api_url'] ?? 'https://api.eidca.vn') ?>"/>
+        <div class="form-hint">Đường dẫn cơ sở gọi API nhà cung cấp eIDCA (mặc định: https://api.eidca.vn).</div>
       </div>
     </div>
   </div>

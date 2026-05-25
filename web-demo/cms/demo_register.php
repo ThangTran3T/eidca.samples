@@ -5,26 +5,22 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/layout.php';
 
 requireLogin();
 $user = currentUser();
 
-$row     = DB::row('SELECT * FROM users WHERE id=? LIMIT 1', [$user['id']]);
-$nfcUrl  = $row['nfc_url'] ?: DEFAULT_NFC_URL;
-$camUrl  = $row['cam_url'] ?: DEFAULT_CAM_URL;
-$apiKey  = $row['api_key'] ?? '';
-$base = _base();
-?>
+$row         = DB::row('SELECT * FROM users WHERE id=? LIMIT 1', [$user['id']]);
+$nfcUrl      = $row['nfc_url'] ?: DEFAULT_NFC_URL;
+$camUrl      = $row['cam_url'] ?: DEFAULT_CAM_URL;
+$apiKey      = $row['api_key'] ?? '';
+$partnerCode = $row['partner_code'] ?? 'PARTNER001';
+$eidcaApiKey = $row['eidca_api_key'] ?? '';
+$eidcaApiUrl = $row['eidca_api_url'] ?: 'https://api.eidca.vn';
+$base        = _base();
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Đăng ký Chữ ký số – EIDCA</title>
-<meta name="description" content="Đăng ký chữ ký số cá nhân EIDCA an toàn, nhanh chóng. Sử dụng CCCD gắn chip và xác thực khuôn mặt để cấp chứng thư số trong vài phút."/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+layoutHeader('Đăng ký Chứng thư số', 'demo_register');
+?>
 <!-- Socket.IO CDN (dùng cho kết nối thiết bị thật; bỏ qua nếu không online) -->
 <script>window._sioLoaded=false;</script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous" onload="window._sioLoaded=true" onerror="console.warn('[EIDCA] socket.io CDN unavailable – real device mode disabled')"></script>
@@ -67,7 +63,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 @keyframes blink { 50% { opacity:0; } }
 
 /* Layout */
-.page-wrap { max-width:820px; margin:0 auto; padding:2.5rem 1.5rem 4rem; }
+.page-wrap { max-width:820px; margin:0 auto; padding:1.5rem 0.5rem 4rem; }
 
 /* Hero */
 .page-hero { text-align:center; margin-bottom:2.5rem; }
@@ -371,6 +367,9 @@ window.EIDCA_NFC_URL    = '<?= $nfcUrl ?>';
 window.EIDCA_CAM_URL    = '<?= $camUrl ?>';
 window.EIDCA_API_KEY    = '<?= $apiKey ?>';
 window.EIDCA_CMS_LOG_URL = location.origin + '<?= $base ?>/api/log_event.php';
+window.EIDCA_PROVIDER_PARTNER_CODE = '<?= e($partnerCode) ?>';
+window.EIDCA_PROVIDER_API_KEY      = '<?= e($eidcaApiKey) ?>';
+window.EIDCA_PROVIDER_API_URL      = '<?= e($eidcaApiUrl) ?>';
 window.eidcaLogEvent = function(action, payload) {
   payload = payload || {};
   fetch(window.EIDCA_CMS_LOG_URL, {
@@ -380,34 +379,7 @@ window.eidcaLogEvent = function(action, payload) {
   }).catch(function(){});
 };
 </script>
-</head>
-<body>
-<div style="position:fixed;top:10px;right:10px;z-index:99999">
-    <a href="<?= $base ?>/dashboard.html" style="background:#7c3aed;color:#fff;padding:7px 14px;border-radius:8px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(124,58,237,.4)">&larr; CMS</a>
-</div>
-
-
-<!-- ── Top Navigation ── -->
-<nav class="topnav" role="navigation" aria-label="Điều hướng chính">
-  <a class="nav-brand" href="#" aria-label="EIDCA - Trang chủ">
-    <div class="nav-logo" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3L4 7v5c0 5.25 3.75 9.75 8 11 4.25-1.25 8-5.75 8-11V7l-8-4z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2.5 2.5L15 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <div><span class="nav-title">EIDCA <span>Chứng thư số</span></span></div>
-  </a>
-  <div class="nav-right">
-    <button class="device-pill" id="devicePill" onclick="toggleDeviceMode()" title="Nhấn để chuyển chế độ thiết bị">
-      <span class="dot" id="deviceDot"></span>
-      <span id="devicePillLabel">Demo Mode</span>
-    </button>
-    <div class="nav-secure" aria-label="Kết nối bảo mật">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      Kết nối an toàn
-    </div>
-  </div>
-</nav>
-
-<main class="page-wrap" role="main">
+<div class="page-wrap">
   <div class="page-hero">
     <div class="badge-top" role="note">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -725,9 +697,10 @@ function setupSocket() {
     _autoFill();
     updateDevicePill();
     renderDeviceBar();
-    // Nếu đang ở bước 1: highlight các field đã tự điền
-    if (S.step === 1) render();
-    if (S.step === 2) render();
+    render();
+    if (!S.useMock && (S.step === 1 || S.step === 2)) {
+      liveFetchChallengeImmediately();
+    }
   };
 
   // id:4 — ảnh + raw NFC data
@@ -750,6 +723,10 @@ function setupSocket() {
     updateDevicePill();
     renderDeviceBar();
     if (S.step === 2) render();
+  };
+
+  S.socket.on.aaResponse = (evt) => {
+    // Dynamic handler in submitVerify
   };
 
   // Webcam: nhận frame ảnh liên tục
@@ -802,6 +779,70 @@ function _autoFill() {
   S.autoFilledFields.clear();
   for (const [k,v] of Object.entries(map)) {
     if (v) { S.userData[k] = v; S.autoFilledFields.add(k); }
+  }
+}
+
+async function liveFetchChallengeImmediately() {
+  if (S.useMock) return;
+  if (S.liveChallenge) return; // Đã có challenge và signature đã cache, không cần lấy lại
+  const idNumber = S.cardData?.idCode || S.userData.idNumber;
+  if (!idNumber) return;
+
+  const partnerCode = window.EIDCA_PROVIDER_PARTNER_CODE;
+  const providerApiKey = window.EIDCA_PROVIDER_API_KEY;
+  const providerApiUrl = window.EIDCA_PROVIDER_API_URL;
+  
+  if (!providerApiKey || !partnerCode) {
+    S.challengeError = "Vui lòng cấu hình API Key và Partner Code của Nhà cung cấp trong phần Cài đặt CMS trước.";
+    render();
+    return;
+  }
+
+  S.nfcStatus = 'scanning';
+  S.challengeLoading = true;
+  S.challengeError = null;
+  render();
+
+  try {
+    const challengeRes = await fetch(`${providerApiUrl}/ca/api/eid-personal/challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': providerApiKey },
+      body: JSON.stringify({ code: partnerCode, id_number: idNumber })
+    });
+    const challengeJson = await challengeRes.json().catch(() => ({}));
+    
+    if (!challengeRes.ok || !challengeJson.success) {
+      const errMsg = challengeJson.error?.message || challengeJson.message || (typeof challengeJson.error === 'string' ? challengeJson.error : null) || "Lấy Challenge từ eIDCA thất bại.";
+      throw new Error(errMsg);
+    }
+
+    const challengeData = challengeJson.data;
+    S.liveChallenge = challengeData.challenge;
+    S.liveTokenChallenge = challengeData.token_challenge;
+    S.liveTransactionCode = challengeData.transaction_code;
+    S.challengeLoading = false;
+    S.nfcStatus = 'ok';
+    render();
+
+    // LẤY NGAY LẬP TỨC: Gửi lệnh ký Active Authentication lên chip thẻ ngay khi nhận được challenge
+    console.log("[eIDCA] Nhận challenge thành công, gửi lệnh ký Active Authentication ngay...");
+    S.socket.on.aaResponse = (evt) => {
+      S.socket.on.aaResponse = null;
+      if (evt && evt.data && evt.data.aa_signature) {
+        S.liveAaSignature = evt.data.aa_signature;
+        console.log("[eIDCA] Đã lấy và cache aa_signature thành công!");
+      } else {
+        console.error("[eIDCA] Lấy aa_signature thất bại.");
+      }
+    };
+    S.socket.sendAA(S.liveChallenge);
+
+  } catch (err) {
+    console.error("[eIDCA] Challenge check error:", err);
+    S.challengeError = err.message || "Không thể kết nối đến máy chủ eIDCA để lấy Challenge.";
+    S.challengeLoading = false;
+    S.nfcStatus = 'error';
+    render();
   }
 }
 
@@ -911,6 +952,20 @@ function retryDeviceConnect() {
 }
 
 function updateDevicePill() {
+  let pill = document.getElementById('devicePill');
+  if (!pill) {
+    const right = document.querySelector('.topbar-right');
+    if (right) {
+      pill = document.createElement('button');
+      pill.className = 'device-pill';
+      pill.id = 'devicePill';
+      pill.onclick = toggleDeviceMode;
+      pill.title = 'Nhấn để chuyển chế độ thiết bị';
+      pill.style.marginRight = '12px';
+      pill.innerHTML = `<span class="dot" id="deviceDot"></span><span id="devicePillLabel">Demo Mode</span>`;
+      right.insertBefore(pill, right.firstChild);
+    }
+  }
   const dot = document.getElementById('deviceDot');
   const label = document.getElementById('devicePillLabel');
   if (!dot || !label) return;
@@ -1032,12 +1087,24 @@ function renderInfoForm() {
   </div>
 </div>
 <div class="card-body">
-  ${hasAutofill ? `<div class="alert alert-success" role="status">
+  ${S.challengeLoading ? `<div class="alert alert-info" role="status">
+    <span class="spin dark" style="margin-right:8px"></span>
+    <div>Đang đối chiếu thông tin Căn cước công dân với hệ thống eIDCA…</div>
+  </div>` : S.challengeError ? `<div class="alert alert-danger" role="status">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+    <div>
+      <strong>Cấp CTS Thất Bại:</strong> ${S.challengeError}.
+      <div style="margin-top:6px;font-size:12.5px;font-weight:600">
+        💡 Người dùng này đã sở hữu Chứng thư số trên hệ thống eIDCA. Hãy đổi thẻ CCCD khác hoặc 
+        <a href="javascript:void(0)" onclick="registerAnotherPerson()" style="color:var(--danger);font-weight:700;text-decoration:underline">Đăng ký cho người khác</a>.
+      </div>
+    </div>
+  </div>` : hasAutofill ? `<div class="alert alert-success" role="status">
     <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     <div>Đã tự động điền <strong>${af.size} trường</strong> từ chip CCCD. Kiểm tra và bổ sung các thông tin còn thiếu.</div>
   </div>` : `<div class="alert alert-warn">
     <svg viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="1.8"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    Thông tin phải khớp chính xác với CCCD. Đặt thẻ vào đầu đọc ở bước tiếp theo để tự động điền.
+    Thông tin phải khớp chính xác với CCCD. Đặt thẻ vào đầu đọc để tự động điền.
   </div>`}
 
   <form id="infoForm" novalidate>
@@ -1092,7 +1159,7 @@ function renderInfoForm() {
     <button class="btn btn-secondary" onclick="goStep(0)">
       <svg viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Quay lại
     </button>
-    <button class="btn btn-primary" onclick="submitInfoForm()">
+    <button class="btn btn-primary" onclick="submitInfoForm()" ${S.challengeLoading || S.challengeError ? 'disabled' : ''}>
       Tiếp theo <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </div>
@@ -1101,13 +1168,33 @@ function renderInfoForm() {
 
 // ── Verify (CCCD reader + Webcam selfie) ──────────────────────────────────
 function renderVerify() {
-  const nfcOk = !!S.cardData;
+  const nfcOk = !!S.cardData && !S.challengeError;
   const selfieOk = !!S.selfieCapture;
   const nfcSt = S.nfcStatus;
+  const canSubmit = nfcOk && selfieOk && !S.challengeLoading && !S.challengeError;
 
   // NFC reader panel HTML
   let nfcBody = '';
-  if (nfcSt === 'idle' || nfcSt === 'connecting') {
+  if (S.challengeLoading) {
+    nfcBody = `<div class="reader-status">
+      <div class="reader-anim scanning"><span class="spin dark" style="width:36px;height:36px;border-width:3px;margin:0 auto 10px;display:block"></span></div>
+      <div class="reader-status-text">Đang đối chiếu CSDL eIDCA…</div>
+      <div class="reader-status-sub">Vui lòng chờ kiểm tra thông tin Chứng thư số của bạn</div>
+    </div>`;
+  } else if (S.challengeError) {
+    nfcBody = `<div class="reader-status">
+      <div class="reader-anim err"><svg viewBox="0 0 24 24" fill="none" style="color:var(--danger)"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="1.8"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+      <div class="reader-status-text" style="color:var(--danger)">Cấp CTS Thất Bại</div>
+      <div class="reader-status-sub" style="font-weight:600;color:var(--danger);margin-top:8px">${S.challengeError}</div>
+      <div class="alert alert-danger" style="margin-top:1rem;text-align:left">
+        💡 <strong>Gợi ý khắc phục:</strong> Người dùng này đã sở hữu Chứng thư số trên hệ thống eIDCA. Hãy đổi thẻ CCCD khác và đăng ký lại cho người chưa có Chứng thư số.
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-secondary" style="margin-top:8px;font-size:12px" onclick="reReadCard()">Đọc thẻ khác</button>
+        <button class="btn btn-primary" style="margin-top:8px;font-size:12px;background:var(--accent);border-color:var(--accent)" onclick="registerAnotherPerson()">Đăng ký cho người khác</button>
+      </div>
+    </div>`;
+  } else if (nfcSt === 'idle' || nfcSt === 'connecting') {
     nfcBody = `<div class="reader-status">
       <div class="reader-anim"><svg viewBox="0 0 24 24" fill="none" style="color:var(--text-3)"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M7 9h2m4 0h4M7 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
       <div class="reader-status-text">Đang khởi tạo đầu đọc…</div>
@@ -1233,8 +1320,6 @@ function renderVerify() {
     </div>`;
   }
 
-  const canSubmit = nfcOk && selfieOk;
-
   // NFC badge class
   function nfcBadgeCls() {
     if (nfcOk) return 'device-status-badge dsb-ok';
@@ -1304,7 +1389,10 @@ function renderVerify() {
     </div>
   </div>
 
-  ${canSubmit ? `<div class="alert alert-success" role="status">
+  ${S.challengeError ? `<div class="alert alert-danger" role="status">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+    <div><strong>Dừng đăng ký!</strong> ${S.challengeError}. Hãy đổi thẻ CCCD khác.</div>
+  </div>` : canSubmit ? `<div class="alert alert-success" role="status">
     <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     <div><strong>Xác thực đầy đủ!</strong> Dữ liệu chip CCCD và ảnh sinh trắc học đã sẵn sàng. Nhấn <strong>Hoàn tất</strong> để tiến hành cấp Chứng thư số.</div>
   </div>` : `<div class="alert alert-info" role="note">
@@ -1359,7 +1447,10 @@ function renderProcessing() {
         : c==='active'
         ? `<span class="spin" style="width:12px;height:12px;border-width:2px"></span>`
         : `<span style="width:7px;height:7px;border-radius:50%;background:var(--border-strong);display:block"></span>`;
-      return `<div class="check-item ${cls}"><div class="check-dot ${dotCls}">${icon}</div><span>${label}</span></div>`;
+      return `<div class="check-item ${cls}">
+        <div class="check-dot ${dotCls}">${icon}</div>
+        <span>${label} ${!S.useMock && i === 4 && c === 'active' ? `<strong id="countdownTimerDisplay" style="color:var(--warn);margin-left:8px">(Thời gian chờ cấp: ${window.eidcaCountdownVal || 120}s)</strong>` : ''}</span>
+      </div>`;
     }).join('')}
   </div>
 </div>`;
@@ -1421,7 +1512,7 @@ function renderError() {
 <div class="card-body">
   <div class="alert alert-danger" role="alert">
     <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
-    <div><strong>Xác thực sinh trắc học không khớp.</strong> Khuôn mặt trong ảnh selfie không khớp với dữ liệu chip CCCD. Vui lòng thử lại hoặc liên hệ hỗ trợ <strong>1800-9999</strong>.</div>
+    <div><strong>${S.useMock ? 'Xác thực sinh trắc học không khớp.' : 'Lỗi kết nối eIDCA API:'}</strong> ${S.useMock ? 'Khuôn mặt trong ảnh selfie không khớp với dữ liệu chip CCCD. Vui lòng thử lại hoặc liên hệ hỗ trợ <strong>1800-9999</strong>.' : (S.liveErrorMsg || 'Không thể kết nối đến máy chủ eIDCA.')}</div>
   </div>
   <div style="background:var(--surface-alt);border-radius:var(--r-md);padding:1.25rem;margin-bottom:1.25rem">
     <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:.5rem">Các bước khắc phục:</div>
@@ -1455,6 +1546,12 @@ function goStep(n) {
     S.verifyChecks = []; S.certInfo = null;
     S.autoFilledFields = new Set();
     S.userData = { fullName:'', idNumber:'', dateOfBirth:'', phone:'', email:'', expiryDate:'' };
+    S.challengeError = null;
+    S.challengeLoading = false;
+    S.liveChallenge = null;
+    S.liveTokenChallenge = null;
+    S.liveTransactionCode = null;
+    S.liveAaSignature = null;
     stopMockCanvas();
     if (S.socket) { S.socket.disconnect(); S.socket = null; }
   }
@@ -1462,6 +1559,9 @@ function goStep(n) {
     if (S.socket && !S.useMock && S.nfcStatus !== 'idle' && S.nfcStatus !== 'error') {
       // Real mode: socket đã kết nối từ trước (toggleDeviceMode) → chỉ resume webcam
       S.socket.resumeCam();
+      if (S.cardData) {
+        liveFetchChallengeImmediately();
+      }
     } else {
       // Mock mode hoặc chưa có socket → khởi tạo mới
       if (!S.socket) {
@@ -1560,8 +1660,19 @@ function reReadCard() {
     S.socket.simulateCardRead();
   }
   S.cardData = null; S.cardPhoto = null; S.rawNfc = null; S.dsCert = null;
+  S.challengeError = null;
+  S.challengeLoading = false;
+  S.liveChallenge = null;
+  S.liveTokenChallenge = null;
+  S.liveTransactionCode = null;
+  S.liveAaSignature = null;
   S.nfcStatus = 'scanning';
   render();
+}
+
+function registerAnotherPerson() {
+  goStep(0);
+  goStep(1);
 }
 
 async function submitVerify() {
@@ -1569,32 +1680,220 @@ async function submitVerify() {
   S.verifyChecks = Array(5).fill('pending');
   render();
 
-  const timings = [900, 1300, 1000, 1700, 1100];
-  for (let i=0; i<timings.length; i++) {
-    S.verifyChecks[i] = 'active';
-    render();
-    await delay(timings[i]);
+  if (S.useMock) {
+    const timings = [900, 1300, 1000, 1700, 1100];
+    for (let i=0; i<timings.length; i++) {
+      S.verifyChecks[i] = 'active';
+      render();
+      await delay(timings[i]);
 
-    // Simulate face mismatch failure (5% chance in demo)
-    if (i===1 && S.useMock && Math.random()<0.05) {
-      S.verifyChecks[i] = 'fail'; render();
-      await delay(700); goStep(5); return;
+      // Simulate face mismatch failure (5% chance in demo)
+      if (i===1 && Math.random()<0.05) {
+        S.verifyChecks[i] = 'fail'; render();
+        await delay(700); goStep(5); return;
+      }
+      S.verifyChecks[i] = 'ok';
+      render();
+      await delay(150);
     }
-    S.verifyChecks[i] = 'ok';
-    render();
-    await delay(150);
+    await delay(500);
+    const now = new Date();
+    const exp = new Date(now); exp.setFullYear(exp.getFullYear()+1);
+    S.certInfo = {
+      fullName: S.userData.fullName,
+      serial: 'VNECC-' + Math.random().toString(36).substr(2,8).toUpperCase(),
+      issuer: 'EIDCA Public CA — Trung tâm Chứng thư số Quốc gia',
+      issuedAt: now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}),
+      expiresAt: exp.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}),
+    };
+    goStep(4);
+  } else {
+    // ---- LIVE MODE FLOW ----
+    try {
+      S.liveErrorMsg = "";
+      
+      const partnerCode = window.EIDCA_PROVIDER_PARTNER_CODE;
+      const providerApiKey = window.EIDCA_PROVIDER_API_KEY;
+      const providerApiUrl = window.EIDCA_PROVIDER_API_URL;
+      
+      if (!providerApiKey || !partnerCode) {
+        throw new Error("Vui lòng cấu hình API Key và Partner Code của Nhà cung cấp trong phần Cài đặt CMS trước.");
+      }
+
+      // 1. Chỉ hiển thị, thể hiện 5 quy trình -> Gửi thông tin đăng ký qua luồng API đã biết
+      // Step 1: Lấy Challenge (Sử dụng challenge đã lấy và cache từ Bước 2)
+      S.verifyChecks[0] = 'active'; render();
+      
+      let challenge = S.liveChallenge;
+      let tokenChallenge = S.liveTokenChallenge;
+      let transactionCode = S.liveTransactionCode;
+      
+      if (!challenge || !tokenChallenge || !transactionCode) {
+        const challengeRes = await fetch(`${providerApiUrl}/ca/api/eid-personal/challenge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': providerApiKey },
+          body: JSON.stringify({ code: partnerCode, id_number: S.userData.idNumber })
+        });
+        const challengeJson = await challengeRes.json().catch(() => ({}));
+        if (!challengeRes.ok || !challengeJson.success) {
+          const errMsg = challengeJson.error?.message || challengeJson.message || "Lấy Challenge từ eIDCA thất bại.";
+          throw new Error(errMsg);
+        }
+        const challengeData = challengeJson.data;
+        challenge = challengeData.challenge;
+        tokenChallenge = challengeData.token_challenge;
+        transactionCode = challengeData.transaction_code;
+      }
+      
+      S.verifyChecks[0] = 'ok';
+      S.verifyChecks[1] = 'active'; render();
+
+      // Step 2: Yêu cầu đầu đọc NFC ký Active Authentication (Sử dụng signature đã cache từ Bước 2)
+      let aaSignature = S.liveAaSignature;
+      if (!aaSignature) {
+        if (S.dsCert && S.dsCert.AA && S.dsCert.AA.aa_signature) {
+          aaSignature = S.dsCert.AA.aa_signature;
+        } else {
+          aaSignature = await new Promise((resolve, reject) => {
+            const t = setTimeout(() => {
+              S.socket.on.aaResponse = null;
+              reject(new Error("Hết thời gian chờ ký Active Authentication trên chip thẻ (15s)."));
+            }, 15000);
+            
+            S.socket.on.aaResponse = (evt) => {
+              clearTimeout(t);
+              S.socket.on.aaResponse = null;
+              if (evt && evt.data && evt.data.aa_signature) {
+                resolve(evt.data.aa_signature);
+              } else {
+                reject(new Error("Lỗi khi ký Active Authentication trên chip thẻ."));
+              }
+            };
+            S.socket.sendAA(challenge);
+          });
+        }
+      }
+
+      S.verifyChecks[1] = 'ok';
+      S.verifyChecks[2] = 'active'; render();
+
+      // Step 3: Gửi Signature & thông tin đăng ký
+      const rawData = {
+        sod: S.rawNfc?.sod || '',
+        dg1: S.rawNfc?.dg1 || '',
+        dg2: S.rawNfc?.dg2 || '',
+        dg13: S.rawNfc?.dg13 || '',
+        dg15: S.rawNfc?.dg15 || ''
+      };
+
+      const info = {
+        ip_address: "127.0.0.1",
+        hand_sig_image_base64: "", 
+        machine_name: "Web Browser",
+        machine_type: "PC",
+        operating_system: navigator.platform,
+        version: "1.0",
+        serial_device: S.deviceInfo?.serial_device || "0012300",
+        permanent_city: S.cardData?.originPlace || "",
+        permanent_district: S.cardData?.residencePlace || "",
+        phone: S.userData.phone,
+        email: S.userData.email,
+        image: S.selfieCapture || ""
+      };
+
+      const registerRes = await fetch(`${providerApiUrl}/ca/api/eid-personal/signature`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': providerApiKey },
+        body: JSON.stringify({
+          code: partnerCode,
+          transaction_code: transactionCode,
+          token_challenge: tokenChallenge,
+          raw_data: rawData,
+          info: info,
+          signature: aaSignature
+        })
+      });
+      const registerJson = await registerRes.json();
+      if (!registerJson.success) {
+        throw new Error(registerJson.error?.message || "Đăng ký chữ ký số qua eIDCA thất bại.");
+      }
+      const registerData = registerJson.data;
+      const tokenSignature = registerData.token_signature;
+
+      S.verifyChecks[2] = 'ok';
+      S.verifyChecks[3] = 'active'; render();
+      await delay(800); // Thể hiện luồng tạo key trên HSM
+      S.verifyChecks[3] = 'ok';
+      S.verifyChecks[4] = 'active'; render();
+
+      // 2. Hiển thị thời gian đếm ngược 2 phút, Get link lấy thông tin chứng thư số -> Thành công
+      let countdown = 120;
+      let status = registerData.status; // 'processing' | 'completed' | 'failed'
+      let certInfo = null;
+      
+      window.eidcaCountdownVal = countdown;
+      const countdownInterval = setInterval(() => {
+        window.eidcaCountdownVal--;
+        const timerEl = document.getElementById('countdownTimerDisplay');
+        if (timerEl) {
+          timerEl.textContent = `(Thời gian chờ cấp: ${window.eidcaCountdownVal}s)`;
+        }
+        if (window.eidcaCountdownVal <= 0) clearInterval(countdownInterval);
+      }, 1000);
+
+      const pollInterval = registerData.interval ? parseInt(registerData.interval) * 1000 : 3000;
+      
+      while (status === 'processing' && window.eidcaCountdownVal > 0) {
+        await delay(pollInterval);
+        if (window.eidcaCountdownVal <= 0) break;
+
+        const checkRes = await fetch(`${providerApiUrl}/ca/api/eid-personal/check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': providerApiKey },
+          body: JSON.stringify({
+            code: partnerCode,
+            transaction_code: transactionCode,
+            token_signature: tokenSignature
+          })
+        });
+        const checkJson = await checkRes.json();
+        if (checkJson.success && checkJson.data) {
+          status = checkJson.data.status;
+          if (status === 'completed') {
+            certInfo = checkJson.data.cert_info;
+            break;
+          } else if (status === 'failed') {
+            throw new Error(checkJson.data.error?.message || "Cấp chứng thư số thất bại từ hệ thống Public CA.");
+          }
+        }
+      }
+
+      clearInterval(countdownInterval);
+
+      if (status !== 'completed' || !certInfo) {
+        throw new Error("Hết thời gian chờ 2 phút cấp chứng thư số từ hệ thống Public CA.");
+      }
+
+      // 3. Hiển thị thông tin cts (Thành công)
+      S.verifyChecks[4] = 'ok'; render();
+      await delay(500);
+
+      S.certInfo = {
+        fullName: certInfo.full_name || S.userData.fullName,
+        serial: certInfo.serial_number || 'UNKNOWN',
+        issuer: 'EIDCA Public CA — Trung tâm Chứng thư số Quốc gia',
+        issuedAt: certInfo.date_issue || new Date().toLocaleDateString('vi-VN'),
+        expiresAt: certInfo.date_expire || new Date(Date.now() + 365*24*3600*1000).toLocaleDateString('vi-VN'),
+      };
+      
+      goStep(4);
+
+    } catch (err) {
+      console.error(err);
+      S.liveErrorMsg = err.message || "Lỗi kết nối API nhà cung cấp eIDCA.";
+      goStep(5);
+    }
   }
-  await delay(500);
-  const now = new Date();
-  const exp = new Date(now); exp.setFullYear(exp.getFullYear()+1);
-  S.certInfo = {
-    fullName: S.userData.fullName,
-    serial: 'VNECC-' + Math.random().toString(36).substr(2,8).toUpperCase(),
-    issuer: 'EIDCA Public CA — Trung tâm Chứng thư số Quốc gia',
-    issuedAt: now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}),
-    expiresAt: exp.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}),
-  };
-  goStep(4);
 }
 
 function retryVerify() {
@@ -1677,6 +1976,5 @@ render();
   };
 })();
 </script>
-</body>
-</html>
+<?php layoutFooter(); ?>
 

@@ -36,9 +36,12 @@ if (!$row) {
 }
 
 echo json_encode([
-    'ok'      => true,
-    'nfc_url' => $row['nfc_url'] ?: DEFAULT_NFC_URL,
-    'cam_url' => $row['cam_url'] ?: DEFAULT_CAM_URL,
-    'api_key' => $row['api_key'],
-    'user'    => ['id' => $row['id'], 'username' => $row['username'], 'role' => $row['role']],
+    'ok'            => true,
+    'nfc_url'       => $row['nfc_url'] ?: DEFAULT_NFC_URL,
+    'cam_url'       => $row['cam_url'] ?: DEFAULT_CAM_URL,
+    'api_key'       => $row['api_key'],
+    'partner_code'  => $row['partner_code'] ?? '',
+    'eidca_api_key' => $row['eidca_api_key'] ?? '',
+    'eidca_api_url' => $row['eidca_api_url'] ?: 'https://api.eidca.vn',
+    'user'          => ['id' => $row['id'], 'username' => $row['username'], 'role' => $row['role']],
 ], JSON_UNESCAPED_UNICODE);

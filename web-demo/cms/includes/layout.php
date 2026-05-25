@@ -48,10 +48,6 @@ function layoutHeader(string $title = 'Dashboard', string $activePage = ''): voi
       <svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Ký số Tài liệu
     </a>
-    <a href="<?= _base() ?>/demo_dkcn.html" class="nav-item <?= $activePage==='demo_dkcn' ? 'active' : '' ?>">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M9 12h6M9 16h6M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      ĐK Chứng nhận
-    </a>
 
     <div class="nav-section-label">Tài khoản</div>
     <a href="<?= _base() ?>/logs.html" class="nav-item <?= $activePage==='logs' ? 'active' : '' ?>">
