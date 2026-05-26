@@ -17,6 +17,7 @@ $apiKey      = $row['api_key'] ?? '';
 $partnerCode = $row['partner_code'] ?? 'PARTNER001';
 $eidcaApiKey = $row['eidca_api_key'] ?? '';
 $eidcaApiUrl = $row['eidca_api_url'] ?: 'https://api.eidca.vn';
+$signProps   = $row['sign_props'] ?? '';
 $base        = _base();
 
 layoutHeader('Ký số Tài liệu', 'demo_signing');
@@ -417,6 +418,7 @@ window.EIDCA_CMS_LOG_URL = location.origin + '<?= $base ?>/api/log_event.php';
 window.EIDCA_PROVIDER_PARTNER_CODE = '<?= e($partnerCode) ?>';
 window.EIDCA_PROVIDER_API_KEY      = '<?= e($eidcaApiKey) ?>';
 window.EIDCA_PROVIDER_API_URL      = '<?= e($eidcaApiUrl) ?>';
+window.EIDCA_SIGN_PROPS            = <?= $signProps ? "'" . $signProps . "'" : 'null' ?>;
 window.eidcaLogEvent = function(action, payload) {
   payload = payload || {};
   fetch(window.EIDCA_CMS_LOG_URL, {
@@ -818,28 +820,47 @@ async function liveFetchChallengeImmediately() {
     formData.append('id_number', idNumber);
     formData.append('security_level', 'LEVEL_2');
     
-    const props = [{
-      page: 1,
-      lLx: 47,
-      lLy: 693,
-      width: 167,
-      height: 95,
-      template: "text_only",
-      show_info: ["reason", "location", "contact", "name", "org", "date"],
-      location: S.signOptions.location || "Hà Nội",
-      location_label: "Tại: Phòng giao dịch",
-      reason: S.signOptions.reason || "Ký hợp đồng điện tử",
-      reason_label: S.cardData?.personName || "Nguyễn Văn A",
-      contact: "Giám đốc",
-      contact_label: "",
-      date_label: "Ngày ký",
-      text_color: "#ff0033",
-      font_size: 11,
-      sign_visibility: "shown",
-      watermark_pos: "center",
-      watermark_img_b64: "",
-      hand_sig_img_b64: ""
-    }];
+    // Dùng mẫu chữ ký từ cấu hình CMS nếu có, không thì dùng mặc định
+    let props;
+    if (window.EIDCA_SIGN_PROPS) {
+      // Đã có mẫu upload từ settings – parse thành array
+      try {
+        props = JSON.parse(window.EIDCA_SIGN_PROPS);
+        // Merge thông tin động từ user input vào object đầu tiên
+        if (Array.isArray(props) && props.length > 0) {
+          if (S.signOptions.reason)   props[0].reason        = S.signOptions.reason;
+          if (S.signOptions.location) props[0].location      = S.signOptions.location;
+          if (S.cardData?.personName) props[0].reason_label  = S.cardData.personName;
+        }
+      } catch(e) {
+        console.warn('[eIDCA] Lỗi parse EIDCA_SIGN_PROPS, dùng mặc định:', e);
+        props = null;
+      }
+    }
+    if (!props) {
+      props = [{
+        page: 1,
+        lLx: 47,
+        lLy: 693,
+        width: 167,
+        height: 95,
+        template: "text_only",
+        show_info: ["reason", "location", "contact", "name", "org", "date"],
+        location: S.signOptions.location || "",
+        location_label: "",
+        reason: S.signOptions.reason || "",
+        reason_label: S.cardData?.personName || "",
+        contact: "",
+        contact_label: "",
+        date_label: "Ng\u00e0y k\u00fd: ",
+        text_color: "#ff0033",
+        font_size: 11,
+        sign_visibility: "shown",
+        watermark_pos: "center",
+        watermark_img_b64: "",
+        hand_sig_img_b64: ""
+      }];
+    }
     formData.append('sign_props', JSON.stringify(props));
 
     const challengeRes = await fetch(`${providerApiUrl}/ca/api/sign/challenge`, {
@@ -1785,10 +1806,10 @@ async function submitSign() {
         signerName: S.cardData.personName,
         signerIdCode: S.cardData.idCode,
         docHash: signedDoc.doc_hash || "",
-        certSerial: signedDoc.ca_signature ? "EIDCA-ACTIVE-HSM" : "VNECC-" + Math.random().toString(36).substr(2,8).toUpperCase(),
+        certSerial: signedDoc.ca_signature ? "CA-HSM" : "eIDCA-" + Math.random().toString(36).substr(2,8).toUpperCase(),
         signedAt: new Date(signedDoc.sign_at ? signedDoc.sign_at * 1000 : Date.now()).toLocaleString('vi-VN'),
         docId: docId,
-        tokenSign: tokenSign,
+        tokenSign: signData.token?signData.token:signData.token_sign?signData.token_sign:tokenSign,
         transactionCode: transactionCode
       };
 

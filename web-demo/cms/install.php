@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS users (
     partner_code  VARCHAR(255) DEFAULT NULL,
     eidca_api_key VARCHAR(255) DEFAULT NULL,
     eidca_api_url VARCHAR(255) DEFAULT 'https://api.eidca.vn',
+    sign_props    TEXT DEFAULT NULL,
     is_active     TINYINT(1) NOT NULL DEFAULT 1,
     last_login    DATETIME DEFAULT NULL,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -67,6 +68,13 @@ try {
     if (empty($cols)) {
         $db->exec("ALTER TABLE users ADD COLUMN eidca_api_url VARCHAR(255) DEFAULT 'https://api.eidca.vn' AFTER eidca_api_key");
         $done[] = "Nâng cấp: Thêm cột eidca_api_url thành công.";
+    }
+
+    // Add sign_props
+    $cols = $db->query("SHOW COLUMNS FROM users LIKE 'sign_props'")->fetchAll();
+    if (empty($cols)) {
+        $db->exec("ALTER TABLE users ADD COLUMN sign_props TEXT DEFAULT NULL AFTER eidca_api_url");
+        $done[] = "Nâng cấp: Thêm cột sign_props thành công.";
     }
 } catch (PDOException $e) {
     $errors[] = "Lỗi khi nâng cấp cấu trúc bảng users: " . $e->getMessage();

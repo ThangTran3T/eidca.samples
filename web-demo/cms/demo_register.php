@@ -1826,9 +1826,9 @@ async function submitVerify() {
       S.verifyChecks[3] = 'ok';
       S.verifyChecks[4] = 'active'; render();
 
-      // 2. Hiển thị thời gian đếm ngược 2 phút, Get link lấy thông tin chứng thư số -> Thành công
-      let countdown = 120;
-      let status = registerData.status; // 'processing' | 'completed' | 'failed'
+      // 2. Hiển thị thời gian đếm ngược 3 phút, Get link lấy thông tin chứng thư số -> Thành công
+      let countdown = 180;
+      let status = 'processing'; // đã validate registerJson.success ở trên, nên luôn bắt đầu bằng 'processing'
       let certInfo = null;
       
       window.eidcaCountdownVal = countdown;
@@ -1871,7 +1871,7 @@ async function submitVerify() {
       clearInterval(countdownInterval);
 
       if (status !== 'completed' || !certInfo) {
-        throw new Error("Hết thời gian chờ 2 phút cấp chứng thư số từ hệ thống Public CA.");
+        throw new Error("Hết thời gian chờ 3 phút cấp chứng thư số từ hệ thống Public CA.");
       }
 
       // 3. Hiển thị thông tin cts (Thành công)
