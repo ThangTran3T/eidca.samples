@@ -1415,11 +1415,11 @@ function renderVerify() {
 // ── Processing ─────────────────────────────────────────────────────────────
 function renderProcessing() {
   const checkDef = [
-    'Xác thực chip CCCD với Cơ sở dữ liệu quốc gia',
-    'Đối chiếu sinh trắc học khuôn mặt (Face matching)',
-    'Kiểm tra thông tin đăng ký cư trú',
-    'Tạo cặp khóa bất đối xứng RSA-2048 (HSM)',
-    'Cấp Chứng thư số trên hệ thống Public CA',
+    'Gửi yêu cầu xin cấp chứng thư số',
+    'Xác thực chip CCCD, Chuẩn hóa thông tin',
+    'Gửi thông tin đăng ký lên hệ thống Public CA',
+    'Chờ cấp chứng thư số từ Public CA',
+    'Kiểm tra kết quả cấp chứng thư số'
   ];
   return `
 <div class="card-header">
@@ -1787,15 +1787,15 @@ async function submitVerify() {
       };
 
       const info = {
-        ip_address: "127.0.0.1",
-        hand_sig_image_base64: "", 
-        machine_name: "Web Browser",
-        machine_type: "PC",
-        operating_system: navigator.platform,
-        version: "1.0",
-        serial_device: S.deviceInfo?.serial_device || "0012300",
-        permanent_city: S.cardData?.originPlace || "",
-        permanent_district: S.cardData?.residencePlace || "",
+        //ip_address: "127.0.0.1",
+        //hand_sig_image_base64: "", 
+        //machine_name: "Web Browser",
+        //machine_type: "PC",
+        //operating_system: navigator.platform,
+        //version: "1.0",
+        //serial_device: S.deviceInfo?.serial_device || "0012300",
+        //permanent_city: S.cardData?.originPlace || "",
+        //permanent_district: S.cardData?.residencePlace || "",
         phone: S.userData.phone,
         email: S.userData.email,
         image: S.selfieCapture || ""
@@ -1822,7 +1822,7 @@ async function submitVerify() {
 
       S.verifyChecks[2] = 'ok';
       S.verifyChecks[3] = 'active'; render();
-      await delay(800); // Thể hiện luồng tạo key trên HSM
+      //await delay(800); // Thể hiện luồng tạo key trên HSM
       S.verifyChecks[3] = 'ok';
       S.verifyChecks[4] = 'active'; render();
 
@@ -1881,7 +1881,7 @@ async function submitVerify() {
       S.certInfo = {
         fullName: certInfo.full_name || S.userData.fullName,
         serial: certInfo.serial_number || 'UNKNOWN',
-        issuer: 'EIDCA Public CA — Trung tâm Chứng thư số Quốc gia',
+        issuer: 'Public CA — Trung tâm Chứng thực điện tử Quốc gia',
         issuedAt: certInfo.date_issue || new Date().toLocaleDateString('vi-VN'),
         expiresAt: certInfo.date_expire || new Date(Date.now() + 365*24*3600*1000).toLocaleDateString('vi-VN'),
       };
