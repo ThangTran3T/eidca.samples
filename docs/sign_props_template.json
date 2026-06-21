@@ -1,0 +1,29 @@
+{
+    "page": 1,
+    "lLx": 47,
+    "lLy": 693,
+    "width": 167,
+    "height": 95,
+    "template": "text_only",
+    "show_info": [
+        "reason",
+        "location",
+        "contact",
+        "name",
+        "org",
+        "date"
+    ],
+    "location": "Hà Nội",
+    "location_label": "Tại: Phòng giao dịch",
+    "reason": "Ký hợp đồng điện tử",
+    "reason_label": "Nguyễn Văn A",
+    "contact": "Giám đốc",
+    "contact_label": "",
+    "date_label": "Ngày ký",
+    "text_color": "#ff0033",
+    "font_size": 11,
+    "sign_visibility": "shown",
+    "watermark_pos": "center",
+    "watermark_img_b64": "",
+    "hand_sig_img_b64": ""
+}

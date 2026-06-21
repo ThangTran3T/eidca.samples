@@ -19,7 +19,6 @@ $andClause   = isAdmin() ? '' : 'AND user_id = ' . (int)$uid;
 
 $totalReg = DB::row("SELECT COUNT(*) c FROM activity_logs WHERE action_type='register_cert' $andClause")['c'] ?? 0;
 $totalSig = DB::row("SELECT COUNT(*) c FROM activity_logs WHERE action_type='sign_doc' $andClause")['c'] ?? 0;
-$totalDk  = DB::row("SELECT COUNT(*) c FROM activity_logs WHERE action_type='dkcn' $andClause")['c'] ?? 0;
 $totalAll = DB::row("SELECT COUNT(*) c FROM activity_logs $whereClause")['c'] ?? 0;
 
 // Users count (admin only)
@@ -67,13 +66,6 @@ layoutHeader('Dashboard', 'dashboard');
     </div>
     <div class="stat-value"><?= number_format($totalSig) ?></div>
     <div class="stat-label">Ký số tài liệu</div>
-  </div>
-  <div class="stat-card teal">
-    <div class="stat-icon teal">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M9 12h6M9 16h6M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </div>
-    <div class="stat-value"><?= number_format($totalDk) ?></div>
-    <div class="stat-label">Đăng ký Chứng nhận</div>
   </div>
   <?php if (isAdmin()): ?>
   <div class="stat-card warn">

@@ -25,6 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('settings.html', 'API Key đã được tạo lại thành công.', 'success');
     }
 
+    if ($action === 'clear_sign_props') {
+        DB::exec('UPDATE users SET sign_props=NULL WHERE id=?', [$uid]);
+        logActivity('sign_props_clear');
+        redirect('settings.html', 'Mẫu chữ ký đã được xóa.', 'success');
+    }
+
     if ($action === 'update_settings') {
         $nfcUrl      = trim($_POST['nfc_url']  ?? '');
         $camUrl      = trim($_POST['cam_url']  ?? '');
@@ -44,9 +50,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect('settings.html', "API URL Nhà cung cấp không hợp lệ.", 'error');
         }
 
+        // Handle sign_props file upload
+        $signPropsValue = null; // null = keep existing
+        $hasUpload = isset($_FILES['sign_props_file']) && $_FILES['sign_props_file']['error'] !== UPLOAD_ERR_NO_FILE;
+        if ($hasUpload) {
+            $file = $_FILES['sign_props_file'];
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                redirect('settings.html', 'Lỗi khi upload file mẫu chữ ký.', 'error');
+            }
+            // Check extension & MIME
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if ($ext !== 'json') {
+                redirect('settings.html', 'File mẫu chữ ký phải có đuôi .json.', 'error');
+            }
+            if ($file['size'] > 512 * 1024) { // 512 KB limit
+                redirect('settings.html', 'File JSON quá lớn (tối đa 512 KB).', 'error');
+            }
+            $raw = file_get_contents($file['tmp_name']);
+            $decoded = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                redirect('settings.html', 'File JSON không hợp lệ: ' . json_last_error_msg(), 'error');
+            }
+            if (!is_array($decoded)) {
+                redirect('settings.html', 'Nội dung JSON phải là object.', 'error');
+            }
+            // Minify + wrap in array + encode with unicode escaping
+            $minified = json_encode([$decoded], JSON_UNESCAPED_SLASHES);
+            // Re-encode to escape unicode (\uXXXX) and escape inner quotes
+            $escaped = json_encode($minified, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            // Strip outer string quotes, we store the raw escaped content
+            $signPropsValue = trim($escaped, '"');
+            logActivity('sign_props_upload', ['filename' => $file['name']]);
+        }
+
         DB::exec('UPDATE users SET nfc_url=?, cam_url=?, partner_code=?, eidca_api_key=?, eidca_api_url=? WHERE id=?', [
             $nfcUrl ?: null, $camUrl ?: null, $partnerCode ?: null, $eidcaApiKey ?: null, $eidcaApiUrl ?: 'https://api.eidca.vn', $uid
         ]);
+
+        // Update sign_props only if a new file was uploaded
+        if ($signPropsValue !== null) {
+            DB::exec('UPDATE users SET sign_props=? WHERE id=?', [$signPropsValue, $uid]);
+        }
 
         // Change password?
         if ($newPw !== '') {
@@ -85,7 +129,7 @@ layoutHeader('Cấu hình & API Key', 'settings');
   </div>
 </div>
 
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
   <?= csrfField() ?>
   <input type="hidden" name="action" value="update_settings"/>
 
@@ -209,7 +253,78 @@ layoutHeader('Cấu hình & API Key', 'settings');
     </div>
   </div>
 
-  <!-- Change password card -->
+  <!-- Sign Props / Mẫu chữ ký card -->
+  <div class="card">
+    <div class="card-header">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Mẫu chữ ký (Sign Props)
+      </h2>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13.5px;color:var(--text-3);margin-bottom:1.5rem;line-height:1.6">
+        Upload file JSON mẫu chữ ký. Hệ thống sẽ tự động convert sang định dạng JSON string escaped để sử dụng trong API ký số.
+      </p>
+
+      <?php if (!empty($row['sign_props'])): ?>
+      <!-- Existing sign props -->
+      <div class="alert alert-info" style="margin-bottom:1.5rem;align-items:flex-start;gap:10px">
+        <svg viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" stroke="currentColor" stroke-width="1.8"/></svg>
+        <div style="flex:1">
+          <div style="font-weight:600;margin-bottom:4px">Đã có mẫu chữ ký. Upload file mới sẽ ghi đè lên mẫu hiện tại.</div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem">
+        <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+          <span>Sign Props String (escaped)</span>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn-copy"
+                    onclick="copySignProps(this)" id="btnCopySignProps">
+              📋 Copy
+            </button>
+          </div>
+        </label>
+        <textarea id="signPropsOutput" class="form-control td-mono" rows="4"
+                  readonly style="font-size:11px;line-height:1.6;resize:vertical;word-break:break-all"><?= e($row['sign_props']) ?></textarea>
+        <div class="form-hint">Đây là chuỗi sử dụng trực tiếp cho tham số <code>sign_props</code> trong API.</div>
+      </div>
+      <?php endif; ?>
+
+      <!-- Upload zone -->
+      <div id="dropZone" class="sign-props-drop-zone"
+           onclick="document.getElementById('signPropsFile').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleSignPropsDrop(event)">
+        <div class="drop-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="drop-text">Kéo thả file JSON vào đây hoặc <span class="drop-link">chọn file</span></div>
+        <div class="drop-hint">Chấp nhận: .json • Tối đa 512 KB</div>
+        <div id="dropFileName" class="drop-filename" style="display:none"></div>
+      </div>
+      <input type="file" name="sign_props_file" id="signPropsFile" accept=".json,application/json"
+             style="display:none" onchange="handleSignPropsFile(this)">
+
+      <?php if (!empty($row['sign_props'])): ?>
+      <!-- Delete form -->
+      <div style="margin-top:1rem">
+        <form method="POST" style="display:inline"
+              onsubmit="return confirm('Xóa mẫu chữ ký hiện tại?')">
+          <?= csrfField() ?>
+          <input type="hidden" name="action" value="clear_sign_props"/>
+          <button type="submit" class="btn btn-danger btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Xóa mẫu chữ ký
+          </button>
+        </form>
+      </div>
+      <?php endif; ?>
+    </div>
+  </div>
+
+
   <div class="card">
     <div class="card-header">
       <h2>
@@ -266,5 +381,113 @@ layoutHeader('Cấu hình & API Key', 'settings');
     </button>
   </div>
 </form>
+
+<style>
+/* ── Sign Props Drop Zone ─────────────────────────────────────────────── */
+.sign-props-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  background: var(--bg-2);
+  position: relative;
+}
+.sign-props-drop-zone:hover,
+.sign-props-drop-zone.drag-over {
+  border-color: var(--violet);
+  background: rgba(109,40,217,.05);
+}
+.sign-props-drop-zone.drag-over {
+  border-style: solid;
+}
+.sign-props-drop-zone.has-file {
+  border-color: #10b981;
+  background: rgba(16,185,129,.05);
+}
+.drop-icon {
+  color: var(--text-3);
+  margin-bottom: .75rem;
+  transition: color .2s;
+}
+.sign-props-drop-zone:hover .drop-icon,
+.sign-props-drop-zone.drag-over .drop-icon {
+  color: var(--violet);
+}
+.sign-props-drop-zone.has-file .drop-icon { color: #10b981; }
+.drop-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin-bottom: .3rem;
+}
+.drop-link {
+  color: var(--violet);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.drop-hint {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.drop-filename {
+  margin-top: .75rem;
+  padding: .4rem .9rem;
+  background: rgba(16,185,129,.12);
+  color: #10b981;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+</style>
+
+<script>
+function handleSignPropsFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const zone = document.getElementById('dropZone');
+  const label = document.getElementById('dropFileName');
+  zone.classList.add('has-file');
+  label.style.display = 'inline-flex';
+  label.textContent = '✅ ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+}
+
+function handleSignPropsDrop(event) {
+  event.preventDefault();
+  const zone = document.getElementById('dropZone');
+  zone.classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.json')) {
+    alert('Chỉ chấp nhận file .json');
+    return;
+  }
+  const input = document.getElementById('signPropsFile');
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  input.files = dt.files;
+  handleSignPropsFile(input);
+}
+
+function copySignProps(btn) {
+  const ta = document.getElementById('signPropsOutput');
+  if (!ta) return;
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ Đã copy!';
+    btn.style.background = 'rgba(16,185,129,.15)';
+    btn.style.color = '#10b981';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 2000);
+  });
+}
+</script>
 
 <?php layoutFooter(); ?>
