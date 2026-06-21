@@ -12,8 +12,22 @@
 import http from "http";
 import * as mock from "./mock-data.js";
 
-const PORT = 3001;
+const PORT = 23456;   // Khớp với eIDCA service thật (sign demo dùng port này)
+const ALT_PORT = 3001; // Port cũ cho web-app khác
 const API_KEY = "MOCK_API_KEY_DEMO";
+
+// Base64 PDF tối giản hợp lệ (dùng cho mock signed PDF)
+const MOCK_SIGNED_PDF_B64 =
+  "JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoK" +
+  "PDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPJ4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUg" +
+  "L1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNCAwIFIKL1Jlc291" +
+  "cmNlcyA8PC9Gb250IDw8L0YxIDUgMCBSPj4+PgogPj4KZW5kb2JqCjQgMCBvYmoKPDwKL0xlbmd0aCAxMDgKPj4K" +
+  "c3RyZWFtCkJUCi9GMSAxOCBUZgoyMCA3NTAgVGQKKE1vY2sgU2lnbmVkIFBERiAtIGVJRENBIERlbW8pIFRqCi9G" +
+  "MSAxMiBUZgoyMCA3MDAgVGQKKFRoaXMgaXMgYSBtb2NrIHNpZ25lZCBQREYgZmlsZS4pIFRqCkVUCmVuZHN0cmVh" +
+  "bQplbmRvYmoKNSAwIG9iago8PAovVHlwZSAvRm9udAovU3VidHlwZSAvVHlwZTEKL0Jhc2VGb250IC9IZWx2ZXRp" +
+  "Y2EKPJ4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAw" +
+  "MDAwMDYyIDAwMDAwIG4gCjAwMDAwMDAxMjAgMDAwMDAgbiAKMDAwMDAwMDI3MSAwMDAwMCBuIAowMDAwMDAwNDMxID" +
+  "AwMDAwIG4gCnRyYWlsZXIKPDwKL1NpemUgNgovUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKNTA5CiUlRU9GCg==";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -23,6 +37,7 @@ function send(res, status, body) {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, x-api-key, code, transaction-code, token-sign, token_signature, os-type",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Private-Network": "true",  // Chrome PNA: cho phép public domain gọi localhost
   });
   res.end(JSON.stringify(body, null, 2));
 }
@@ -60,13 +75,37 @@ async function router(req, res) {
   const path = url.pathname;
   const method = req.method;
 
-  // CORS preflight
+  // CORS preflight – bắt buộc trả Access-Control-Allow-Private-Network: true
   if (method === "OPTIONS") {
-    send(res, 204, {});
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, x-api-key",
+      "Access-Control-Allow-Private-Network": "true",
+      "Access-Control-Max-Age": "86400",
+    });
+    res.end();
     return;
   }
 
   await delay(300); // giả lập latency
+
+  // ── 0. Sign Document (điểm cuối của sign demo) ──────────────────────────
+  // POST /api/sign-document
+  if (method === "POST" && path === "/api/sign-document") {
+    const body = await readBody(req);
+    if (!body.pdf_base64 || !body.id_number) {
+      return send(res, 400, { status: "ERROR", message: "Thiếu pdf_base64 hoặc id_number" });
+    }
+    // Giả lập thời gian xử lý (≥ 1.5s – user thấy trạng thái processing)
+    await delay(1500);
+    const txnId = "ist_" + Math.random().toString(36).slice(2, 18).padEnd(32, "0");
+    return send(res, 200, {
+      status: "SUCCESS",
+      transaction_id: txnId,
+      signed_pdf_base64: MOCK_SIGNED_PDF_B64,
+    });
+  }
 
   // ── 1. CTS Cá nhân ──────────────────────────────────────────────────────────
 
@@ -237,9 +276,11 @@ async function router(req, res) {
 // ─── Start Server ─────────────────────────────────────────────────────────────
 
 const server = http.createServer(router);
-server.listen(PORT, () => {
-  console.log(`✅ eIDCA Mock Server đang chạy tại: http://localhost:${PORT}`);
+server.listen(PORT, "127.0.0.1", () => {
+  console.log(`✅ eIDCA Mock Server đang chạy tại: http://127.0.0.1:${PORT}`);
+  console.log(`   → Sign demo endpoint: POST http://127.0.0.1:${PORT}/api/sign-document`);
   console.log(`   x-api-key: ${API_KEY}`);
+  console.log(`   Access-Control-Allow-Private-Network: true (đã bật)`);
   console.log("\n📋 Endpoints có sẵn:");
   console.log("   POST /ca/api/eid-personal/challenge");
   console.log("   POST /ca/api/eid-personal/signature");

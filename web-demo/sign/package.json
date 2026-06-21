@@ -1,0 +1,9 @@
+{
+  "name": "eidca-web-demo-sign",
+  "version": "1.0.0",
+  "description": "Demo ký số PDF sử dụng eIDCA API",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ký số PDF – eIDCA</title>
+  <meta name="description" content="Demo ký số tài liệu PDF sử dụng eIDCA API – hỗ trợ USB Token, CCCD NFC" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <style>
+    /* ───────── Design Tokens ───────── */
+    :root {
+      --bg: #0d0f17;
+      --surface: #161926;
+      --surface2: #1e2235;
+      --border: #2a2f47;
+      --accent: #4f7fff;
+      --accent-glow: #4f7fff44;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text: #e8eaf6;
+      --muted: #8890b0;
+      --radius: 14px;
+      --transition: 0.22s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ───────── Header ───────── */
+    header {
+      background: linear-gradient(135deg, #0d1320 0%, #131827 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #4f7fff, #7c4fff);
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header span {
+      font-size: .85rem;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    /* ───────── Layout ───────── */
+    .app {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 0;
+      max-height: calc(100vh - 73px);
+    }
+
+    /* ───────── Left Panel ───────── */
+    .panel-left {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 24px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* Drop Zone */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition), transform var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+      transform: scale(1.015);
+    }
+
+    .drop-zone input[type=file] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+
+    .drop-label {
+      font-size: .9rem;
+      color: var(--muted);
+    }
+
+    .drop-label strong {
+      color: var(--text);
+    }
+
+    .file-info {
+      margin-top: 10px;
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: .82rem;
+      color: var(--text);
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .file-info.show {
+      display: flex;
+    }
+
+    .file-info .fi-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fi-size {
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    /* Form Fields */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: .82rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: .88rem;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 100px;
+      font-size: .78rem;
+    }
+
+    .field select option {
+      background: var(--surface2);
+    }
+
+    /* Sign Props collapsible */
+    .collapsible-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .collapsible-header .section-title {
+      margin-bottom: 0;
+      flex: 1;
+    }
+
+    .chevron {
+      font-size: .75rem;
+      color: var(--muted);
+      transition: transform var(--transition);
+      display: inline-block;
+    }
+
+    .collapsible-header.open .chevron {
+      transform: rotate(90deg);
+    }
+
+    .collapsible-body {
+      overflow: hidden;
+    }
+
+    /* sign_props visual editor */
+    .sign-props-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .sign-props-grid .field.full {
+      grid-column: 1 / -1;
+    }
+
+    /* Action Button */
+    .btn-sign {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #4f7fff, #7c4fff);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: .02em;
+      transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
+      box-shadow: 0 4px 20px var(--accent-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-sign:hover:not(:disabled) {
+      opacity: .9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px #4f7fff66;
+    }
+
+    .btn-sign:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-sign:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Spinner */
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #fff4;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+
+    .signing .spinner {
+      display: block;
+    }
+
+    /* Status bar */
+    .status-bar {
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: .85rem;
+      font-weight: 500;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.4;
+    }
+
+    .status-bar.show {
+      display: flex;
+    }
+
+    .status-bar.processing {
+      background: #1e2a40;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status-bar.success {
+      background: #0f2b1a;
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+
+    .status-bar.error {
+      background: #2b0f0f;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+    }
+
+    /* Download button */
+    .btn-download {
+      width: 100%;
+      padding: 12px;
+      background: var(--success);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-family: inherit;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity var(--transition), transform var(--transition);
+      box-shadow: 0 4px 18px #22c55e33;
+    }
+
+    .btn-download.show {
+      display: flex;
+    }
+
+    .btn-download:hover {
+      opacity: .9;
+      transform: translateY(-2px);
+    }
+
+    /* Test connection button */
+    .btn-test {
+      width: 100%;
+      padding: 9px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: .82rem;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition), background var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-test:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .btn-test:disabled {
+      opacity: .35;
+      cursor: default;
+    }
+
+    /* CORS banner */
+    .cors-banner {
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: .78rem;
+      line-height: 1.5;
+      background: #1c1800;
+      border: 1px solid var(--warning);
+      color: var(--warning);
+      display: none;
+    }
+
+    .cors-banner.show {
+      display: block;
+    }
+
+    .cors-banner code {
+      background: #2a200a;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: .76rem;
+      color: #fcd34d;
+    }
+
+    /* Info box */
+    .info-box {
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: .78rem;
+      line-height: 1.6;
+      background: #0f1e2b;
+      border: 1px solid #2a4a6a;
+      color: #7ab8e8;
+    }
+
+    .info-box strong {
+      color: #a8d4f0;
+    }
+
+    .info-box code {
+      background: #0a1520;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: .76rem;
+      color: #64b5f6;
+    }
+
+    /* ───────── Right Panel – PDF Viewer ───────── */
+    .panel-right {
+      background: var(--bg);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .viewer-toolbar {
+      width: 100%;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .viewer-toolbar .vt-label {
+      font-size: .85rem;
+      color: var(--muted);
+    }
+
+    .vt-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 5px 12px;
+      font-size: .82rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .vt-btn:hover {
+      background: var(--border);
+      border-color: var(--accent);
+    }
+
+    .vt-btn:disabled {
+      opacity: .35;
+      cursor: default;
+    }
+
+    .page-info {
+      font-size: .85rem;
+      color: var(--muted);
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .zoom-info {
+      font-size: .82rem;
+      color: var(--muted);
+      margin-left: auto;
+    }
+
+    .canvas-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .pdf-placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    .pdf-placeholder .ph-icon {
+      font-size: 4rem;
+      opacity: .3;
+    }
+
+    .pdf-placeholder p {
+      opacity: .5;
+    }
+
+    .page-canvas-container {
+      position: relative;
+      box-shadow: 0 8px 40px #00000066;
+      border-radius: 6px;
+      overflow: visible;
+    }
+
+    .page-canvas-container canvas {
+      display: block;
+      border-radius: 6px;
+    }
+
+    /* Signature overlay on canvas */
+    .sig-overlay {
+      position: absolute;
+      border: 2px dashed var(--danger);
+      background: #ff003322;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    .sig-overlay-label {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-size: 9px;
+      color: var(--danger);
+      font-family: monospace;
+      white-space: nowrap;
+    }
+
+    /* ───────── Scrollbar ───────── */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--muted);
+    }
+
+    /* ───────── Responsive ───────── */
+    @media (max-width: 860px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+
+      .panel-left {
+        max-height: 55vh;
+      }
+
+      .panel-right {
+        min-height: 50vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo-badge">✍️</div>
+    <div>
+      <h1>Ký số PDF <span>eIDCA</span></h1>
+    </div>
+  </header>
+
+  <!-- ── Main Layout ── -->
+  <div class="app">
+
+    <!-- ────────── LEFT PANEL ────────── -->
+    <aside class="panel-left">
+
+      <!-- 1. Upload -->
+      <div>
+        <p class="section-title">📄 Chọn tài liệu PDF</p>
+        <label class="drop-zone" id="dropZone">
+          <input type="file" id="pdfFileInput" accept="application/pdf" />
+          <div class="drop-icon">📂</div>
+          <div class="drop-label"><strong>Kéo thả</strong> hoặc nhấn để chọn file PDF</div>
+        </label>
+        <div class="file-info" id="fileInfo">
+          <span>📄</span>
+          <span class="fi-name" id="fileName">–</span>
+          <span class="fi-size" id="fileSize">–</span>
+        </div>
+      </div>
+
+      <!-- 2. Thông tin ký -->
+      <div>
+        <p class="section-title">🔑 Thông tin ký</p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="field">
+            <label for="methodCode">Phương thức ký</label>
+            <select id="methodCode">
+              <option value="ANY">ANY – Tự động chọn</option>
+              <option value="USB_TOKEN">USB_TOKEN – USB Token</option>
+              <option value="CCCD_NFC">CCCD_NFC – CCCD NFC</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="idNumber">Số CCCD / Định danh <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="idNumber" placeholder="VD: 034080001405" maxlength="12" />
+          </div>
+          <div class="field">
+            <label for="userId">User ID (tùy chọn)</label>
+            <input type="text" id="userId" placeholder="VD: 034080001405" />
+          </div>
+          <div class="field">
+            <label for="eidcaUrl">eIDCA Service URL <small style="color:var(--muted)">(chạy trên máy
+                bạn)</small></label>
+            <input type="text" id="eidcaUrl" value="https://127.0.0.1:23458/api/sign-document"
+              onchange="localStorage.setItem('eidca_url', this.value)" />
+          </div>
+          <div class="info-box" id="archBox">
+            ℹ️ <strong>eIDCA chạy trên máy tính của bạn</strong><br />
+            Trình duyệt sẽ gọi thẳng <code>127.0.0.1:23456</code> – không qua server.<br />
+            Nếu bị chặn (CORS / PNA), yêu cầu đội eIDCA bổ sung header cho service.
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Sign Props -->
+      <div>
+        <div class="collapsible-header" id="spHeader">
+          <p class="section-title">🎨 Vị trí & kiểu chữ ký</p>
+          <span class="chevron">▶</span>
+        </div>
+        <div class="collapsible-body" id="spBody" style="display:none; margin-top:12px;">
+          <div class="sign-props-grid">
+            <div class="field"><label>Trang</label><input type="number" id="spPage" value="1" min="1" /></div>
+            <div class="field"><label>Template</label>
+              <select id="spTemplate">
+                <option value="text_only">text_only</option>
+                <option value="image_only">image_only</option>
+                <option value="image_text">image_text</option>
+              </select>
+            </div>
+            <div class="field"><label>lLx (px)</label><input type="number" id="spLlx" value="47" /></div>
+            <div class="field"><label>lLy (px)</label><input type="number" id="spLly" value="693" /></div>
+            <div class="field"><label>Rộng (px)</label><input type="number" id="spWidth" value="167" /></div>
+            <div class="field"><label>Cao (px)</label><input type="number" id="spHeight" value="95" /></div>
+            <div class="field full"><label>Lý do ký</label><input type="text" id="spReason"
+                value="Ký hợp đồng điện tử" /></div>
+            <div class="field full"><label>Nhãn lý do (tên người ký)</label><input type="text" id="spReasonLabel"
+                value="Nguyễn Văn A" /></div>
+            <div class="field"><label>Địa điểm</label><input type="text" id="spLocation" value="Hà Nội" /></div>
+            <div class="field"><label>Nhãn địa điểm</label><input type="text" id="spLocationLabel"
+                value="Tại: Phòng giao dịch" /></div>
+            <div class="field full"><label>Chức danh (contact)</label><input type="text" id="spContact"
+                value="Giám đốc" /></div>
+            <div class="field"><label>Màu chữ</label><input type="color" id="spTextColor" value="#ff0033"
+                style="height:38px;padding:2px 6px;" /></div>
+            <div class="field"><label>Cỡ chữ</label><input type="number" id="spFontSize" value="11" min="6" max="24" />
+            </div>
+            <div class="field full">
+              <label>Hiển thị chữ ký</label>
+              <select id="spVisibility">
+                <option value="shown">shown – Hiện</option>
+                <option value="hidden">hidden – Ẩn</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label>JSON sign_props (nâng cao – tự nhập ghi đè)</label>
+              <textarea id="spRaw" placeholder="Để trống để dùng form trên"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Actions -->
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto;">
+        <!-- PNA / CORS warning -->
+        <div class="cors-banner" id="pnaBanner" style="display:none;">
+          🚫 <strong>Trình duyệt chặn kết nối tới eIDCA!</strong><br />
+          Trang <strong id="currentOrigin"></strong> → <code>127.0.0.1:23456</code> bị Chrome chặn (PNA
+          policy).<br /><br />
+          ✅ <strong>Yêu cầu đội eIDCA thêm CORS headers vào service:</strong><br />
+          <code>Access-Control-Allow-Origin: *</code><br />
+          <code>Access-Control-Allow-Private-Network: true</code><br />
+          <code>Access-Control-Allow-Headers: Content-Type</code>
+        </div>
+        <div class="status-bar" id="statusBar">
+          <span id="statusIcon">⏳</span>
+          <span id="statusText">Đang xử lý...</span>
+        </div>
+        <button class="btn-sign" id="btnSign" disabled>
+          <div class="spinner" id="spinner"></div>
+          <span id="btnLabel">✍️ Ký số tài liệu</span>
+        </button>
+        <button class="btn-test" id="btnTestConn">🔌 Kiểm tra kết nối API</button>
+        <button class="btn-download" id="btnDownload">
+          ⬇️ Tải file PDF đã ký
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- ────────── RIGHT PANEL – PDF Viewer ────────── -->
+    <main class="panel-right" id="panelRight">
+
+      <div class="viewer-toolbar">
+        <span class="vt-label">Xem trước PDF</span>
+        <button class="vt-btn" id="btnPrevPage" disabled>◀ Trước</button>
+        <span class="page-info" id="pageInfo">– / –</span>
+        <button class="vt-btn" id="btnNextPage" disabled>Sau ▶</button>
+        <button class="vt-btn" id="btnZoomOut" disabled>－</button>
+        <button class="vt-btn" id="btnZoomIn" disabled>＋</button>
+        <span class="zoom-info" id="zoomInfo"></span>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <div class="pdf-placeholder" id="pdfPlaceholder">
+          <div class="ph-icon">📑</div>
+          <p>Chọn file PDF để xem trước tại đây</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────
+    // PDF.js worker setup
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // ─────────────────────────────────────────────
+    // API URL management
+    function getApiUrl() {
+      return document.getElementById('eidcaUrl').value.trim();
+    }
+
+    function isLocalhost() {
+      const h = location.hostname;
+      return h === 'localhost' || h === '127.0.0.1' || h === '' || location.protocol === 'file:';
+    }
+
+    // Restore saved URL + show PNA warning if on public domain
+    (function initApiConfig() {
+      const saved = localStorage.getItem('eidca_url');
+      if (saved) document.getElementById('eidcaUrl').value = saved;
+
+      // If accessed from public domain → warn about PNA (Chrome blocks public → loopback)
+      if (!isLocalhost()) {
+        document.getElementById('currentOrigin').textContent = location.origin;
+        document.getElementById('pnaBanner').style.display = 'block';
+      }
+    })();
+
+
+    // ─────────────────────────────────────────────
+    // State
+    let pdfDoc = null;
+    let pdfB64 = null;            // base64 string – safe to keep after PDF.js loads
+    let currentPage = 1;
+    let totalPages = 0;
+    let scale = 1.4;
+    let signedPdfB64 = null;
+
+    // ─────────────────────────────────────────────
+    // DOM refs
+    const pdfFileInput = document.getElementById('pdfFileInput');
+    const dropZone = document.getElementById('dropZone');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const btnSign = document.getElementById('btnSign');
+    const btnDownload = document.getElementById('btnDownload');
+    const btnLabel = document.getElementById('btnLabel');
+    const spinner = document.getElementById('spinner');
+    const statusBar = document.getElementById('statusBar');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusText = document.getElementById('statusText');
+    const canvasWrap = document.getElementById('canvasWrap');
+    const pdfPlaceholder = document.getElementById('pdfPlaceholder');
+    const pageInfo = document.getElementById('pageInfo');
+    const btnPrev = document.getElementById('btnPrevPage');
+    const btnNext = document.getElementById('btnNextPage');
+    const btnZoomIn = document.getElementById('btnZoomIn');
+    const btnZoomOut = document.getElementById('btnZoomOut');
+    const zoomInfo = document.getElementById('zoomInfo');
+    const spHeader = document.getElementById('spHeader');
+    const spBody = document.getElementById('spBody');
+
+    // sign_props form
+    const spPage = document.getElementById('spPage');
+    const spTemplate = document.getElementById('spTemplate');
+    const spLlx = document.getElementById('spLlx');
+    const spLly = document.getElementById('spLly');
+    const spWidth = document.getElementById('spWidth');
+    const spHeight = document.getElementById('spHeight');
+    const spReason = document.getElementById('spReason');
+    const spReasonLabel = document.getElementById('spReasonLabel');
+    const spLocation = document.getElementById('spLocation');
+    const spLocationLabel = document.getElementById('spLocationLabel');
+    const spContact = document.getElementById('spContact');
+    const spTextColor = document.getElementById('spTextColor');
+    const spFontSize = document.getElementById('spFontSize');
+    const spVisibility = document.getElementById('spVisibility');
+    const spRaw = document.getElementById('spRaw');
+
+    // ─────────────────────────────────────────────
+    // Collapsible sign props
+    spHeader.addEventListener('click', () => {
+      const open = spBody.style.display !== 'none';
+      spBody.style.display = open ? 'none' : 'block';
+      spHeader.classList.toggle('open', !open);
+    });
+
+    // ─────────────────────────────────────────────
+    // Drag & Drop
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type === 'application/pdf') handleFile(file);
+    });
+    pdfFileInput.addEventListener('change', e => {
+      if (e.target.files[0]) handleFile(e.target.files[0]);
+    });
+
+    // ─────────────────────────────────────────────
+    // Handle selected file
+    function handleFile(file) {
+      fileName.textContent = file.name;
+      fileSize.textContent = formatBytes(file.size);
+      fileInfo.classList.add('show');
+      btnSign.disabled = false;
+      signedPdfB64 = null;
+      pdfB64 = null;
+      btnDownload.classList.remove('show');
+      hideStatus();
+
+      // Read as ArrayBuffer for PDF.js (will be transferred/detached after use)
+      const readerArr = new FileReader();
+      readerArr.onload = e => {
+        loadPDF(e.target.result); // PDF.js may detach this buffer – that's OK
+      };
+      readerArr.readAsArrayBuffer(file);
+
+      // Read as base64 separately – stays intact for the sign API call
+      const readerB64 = new FileReader();
+      readerB64.onload = e => {
+        // result is "data:application/pdf;base64,<b64>"
+        pdfB64 = e.target.result.split(',')[1];
+      };
+      readerB64.readAsDataURL(file);
+    }
+
+    function formatBytes(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      return (b / 1048576).toFixed(1) + ' MB';
+    }
+
+    // ─────────────────────────────────────────────
+    // Load & render PDF
+    async function loadPDF(buffer) {
+      try {
+        pdfDoc = await pdfjsLib.getDocument({ data: buffer }).promise;
+        totalPages = pdfDoc.numPages;
+        currentPage = 1;
+        pdfPlaceholder.style.display = 'none';
+        enableViewerControls();
+        renderPage(currentPage);
+      } catch (err) {
+        console.error('PDF load error', err);
+      }
+    }
+
+    function enableViewerControls() {
+      btnPrev.disabled = false;
+      btnNext.disabled = false;
+      btnZoomIn.disabled = false;
+      btnZoomOut.disabled = false;
+      updatePageInfo();
+    }
+
+    async function renderPage(pageNum) {
+      // Remove all existing canvases
+      canvasWrap.querySelectorAll('.page-canvas-container').forEach(el => el.remove());
+
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale });
+
+      const container = document.createElement('div');
+      container.className = 'page-canvas-container';
+
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      container.appendChild(canvas);
+
+      canvasWrap.appendChild(container);
+
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+
+      // Draw sign_props overlay preview (page 1 only matching)
+      const sp = buildSignProps();
+      if (sp && sp.page === pageNum) {
+        drawSigOverlay(container, canvas, sp, viewport, page);
+      }
+
+      updatePageInfo();
+      zoomInfo.textContent = Math.round(scale * 100) + '%';
+    }
+
+    // Build sign_props object from form (or raw JSON)
+    function buildSignProps() {
+      const raw = spRaw.value.trim();
+      try {
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed[0] : parsed;
+        }
+      } catch { /* ignore */ }
+
+      return {
+        page: parseInt(spPage.value) || 1,
+        lLx: parseFloat(spLlx.value) || 47,
+        lLy: parseFloat(spLly.value) || 693,
+        width: parseFloat(spWidth.value) || 167,
+        height: parseFloat(spHeight.value) || 95,
+        template: spTemplate.value,
+        show_info: ["reason", "location", "contact", "name", "org", "date"],
+        location: spLocation.value,
+        location_label: spLocationLabel.value,
+        reason: spReason.value,
+        reason_label: spReasonLabel.value,
+        contact: spContact.value,
+        contact_label: "",
+        date_label: "Ngày ký",
+        text_color: spTextColor.value,
+        font_size: parseInt(spFontSize.value) || 11,
+        sign_visibility: spVisibility.value,
+        watermark_pos: "center",
+        watermark_img_b64: "",
+        hand_sig_img_b64: ""
+      };
+    }
+
+    // Build sign_props JSON string for API
+    function buildSignPropsJsonStr() {
+      const raw = spRaw.value.trim();
+      if (raw) {
+        // validate then return
+        try { JSON.parse(raw); return raw; } catch { /* fall through */ }
+      }
+      const obj = buildSignProps();
+      return JSON.stringify([obj]);
+    }
+
+    // Draw overlay box on canvas showing where signature will appear
+    function drawSigOverlay(container, canvas, sp, viewport, page) {
+      // PDF coordinate system: origin bottom-left; lLx, lLy is lower-left corner
+      // Convert to canvas coordinates (origin top-left)
+      const pdfWidth = page.view[2]; // natural PDF pts width
+      const pdfHeight = page.view[3];
+
+      const scaleX = viewport.width / pdfWidth;
+      const scaleY = viewport.height / pdfHeight;
+
+      const x = sp.lLx * scaleX;
+      const y = viewport.height - (sp.lLy + sp.height) * scaleY;
+      const w = sp.width * scaleX;
+      const h = sp.height * scaleY;
+
+      const overlay = document.createElement('div');
+      overlay.className = 'sig-overlay';
+      overlay.style.left = x + 'px';
+      overlay.style.top = y + 'px';
+      overlay.style.width = w + 'px';
+      overlay.style.height = h + 'px';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'sig-overlay-label';
+      lbl.textContent = '✍️ Vùng chữ ký';
+      overlay.appendChild(lbl);
+
+      container.appendChild(overlay);
+    }
+
+    // Re-render when sign_props form changes (for overlay update)
+    const spInputs = [spPage, spTemplate, spLlx, spLly, spWidth, spHeight,
+      spReason, spReasonLabel, spLocation, spLocationLabel,
+      spContact, spTextColor, spFontSize, spVisibility, spRaw];
+    spInputs.forEach(el => el.addEventListener('change', () => {
+      if (pdfDoc) renderPage(currentPage);
+    }));
+
+    // ─────────────────────────────────────────────
+    // Viewer controls
+    btnPrev.addEventListener('click', () => {
+      if (currentPage > 1) { currentPage--; renderPage(currentPage); }
+    });
+    btnNext.addEventListener('click', () => {
+      if (currentPage < totalPages) { currentPage++; renderPage(currentPage); }
+    });
+    btnZoomIn.addEventListener('click', () => {
+      scale = Math.min(scale + 0.25, 3);
+      renderPage(currentPage);
+    });
+    btnZoomOut.addEventListener('click', () => {
+      scale = Math.max(scale - 0.25, 0.5);
+      renderPage(currentPage);
+    });
+    function updatePageInfo() {
+      pageInfo.textContent = `Trang ${currentPage} / ${totalPages}`;
+      btnPrev.disabled = currentPage <= 1;
+      btnNext.disabled = currentPage >= totalPages;
+    }
+
+    // ─────────────────────────────────────────────
+    // Status helpers
+    function showStatus(type, icon, text) {
+      statusBar.className = 'status-bar show ' + type;
+      statusIcon.textContent = icon;
+      statusText.textContent = text;
+    }
+    function hideStatus() {
+      statusBar.className = 'status-bar';
+    }
+
+    // ─────────────────────────────────────────────
+    // Sign button
+    btnSign.addEventListener('click', async () => {
+      if (!pdfB64) return;
+
+      const idNumber = document.getElementById('idNumber').value.trim();
+      if (!idNumber) {
+        showStatus('error', '❌', 'Vui lòng nhập số CCCD / định danh.');
+        return;
+      }
+
+      // UI: loading state
+      btnSign.disabled = true;
+      btnSign.classList.add('signing');
+      btnLabel.textContent = 'Đang ký...';
+      signedPdfB64 = null;
+      btnDownload.classList.remove('show');
+      showStatus('processing', '⏳', 'Đang gửi yêu cầu ký số, vui lòng chờ...');
+
+      try {
+        // Build payload – use pre-stored base64 (ArrayBuffer was consumed by PDF.js)
+        const payload = {
+          pdf_base64: pdfB64,
+          method_code: document.getElementById('methodCode').value,
+          user_id: document.getElementById('userId').value.trim() || idNumber,
+          id_number: idNumber,
+          sign_props: buildSignPropsJsonStr()
+        };
+
+        const apiUrl = getApiUrl();
+
+        showStatus('processing', '⏳', 'Đã gửi – đang chờ phản hồi từ thiết bị ký...');
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'SUCCESS' && data.signed_pdf_base64) {
+          signedPdfB64 = data.signed_pdf_base64;
+          showStatus('success', '✅', `Ký thành công! Mã GD: ${data.transaction_id || '–'}`);
+          btnDownload.classList.add('show');
+
+          // Preview signed PDF
+          const signedBuffer = base64ToArrayBuffer(signedPdfB64);
+          pdfBytes = signedBuffer;
+          await loadPDF(signedBuffer);
+        } else {
+          const msg = data.message || data.error || JSON.stringify(data);
+          showStatus('error', '❌', 'Ký thất bại: ' + msg);
+        }
+
+      } catch (err) {
+        console.error(err);
+        const isFailedFetch = err.name === 'TypeError' && err.message.toLowerCase().includes('fetch');
+        if (isFailedFetch) {
+          const isFile = location.protocol === 'file:';
+          if (isFile) {
+            showStatus('error', '🚫', 'Không kết nối được. File đang mở bằng file:// – trình duyệt chặn CORS. Xem hướng dẫn bên dưới.');
+            document.getElementById('corsBanner').classList.add('show');
+          } else {
+            showStatus('error', '🔌', 'Không thể kết nối tới API. Kiểm tra service eIDCA đã chạy trên cổng 23456 chưa.');
+          }
+        } else {
+          showStatus('error', '❌', err.message);
+        }
+      } finally {
+        btnSign.disabled = false;
+        btnSign.classList.remove('signing');
+        btnLabel.textContent = '✍️ Ký số tài liệu';
+      }
+    });
+
+    // ─────────────────────────────────────────────
+    // Test connection
+    const btnTestConn = document.getElementById('btnTestConn');
+
+    btnTestConn.addEventListener('click', async () => {
+      const apiUrl = getApiUrl();
+      let pingUrl;
+      try {
+        const u = new URL(apiUrl);
+        pingUrl = u.origin + '/';
+      } catch { pingUrl = apiUrl; }
+
+      btnTestConn.disabled = true;
+      btnTestConn.textContent = '⏳ Đang kiểm tra...';
+
+      try {
+        await fetch(pingUrl, { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(4000) });
+        // Reached here = server responded (even if opaque) = service is running
+        showStatus('success', '✅', 'eIDCA service đang chạy và có thể kết nối được!');
+        document.getElementById('pnaBanner').style.display = 'none';
+      } catch (err) {
+        if (!isLocalhost()) {
+          // Public domain → likely PNA block (Chrome rejects before even connecting)
+          showStatus('error', '🚫', 'Bị chặn bởi Chrome PNA policy. Xem hướng dẫn phía dưới để fix.');
+          document.getElementById('pnaBanner').style.display = 'block';
+        } else {
+          showStatus('error', '🔌', 'Không kết nối được. eIDCA service chưa chạy hoặc sai URL.');
+        }
+      } finally {
+        btnTestConn.disabled = false;
+        btnTestConn.textContent = '🔌 Kiểm tra kết nối API';
+      }
+    });
+
+
+    // ─────────────────────────────────────────────
+    // Download signed PDF
+    btnDownload.addEventListener('click', () => {
+      if (!signedPdfB64) return;
+      const bytes = base64ToArrayBuffer(signedPdfB64);
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const origName = fileName.textContent.replace(/\.pdf$/i, '');
+      a.href = url;
+      a.download = origName + '_signed.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // ─────────────────────────────────────────────
+    // Utility
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function base64ToArrayBuffer(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+  </script>
+</body>
+
+</html>
