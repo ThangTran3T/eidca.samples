@@ -1,0 +1,11 @@
+Options -Indexes
+DirectoryIndex index.php
+
+<FilesMatch "^(config\.php|README\.md|\.user\.ini)$">
+    Require all denied
+</FilesMatch>
+
+# Không phục vụ nội dung thư mục runtime/ (trạng thái giả lập).
+<IfModule mod_rewrite.c>
+    RewriteRule ^runtime/ - [F,L]
+</IfModule>

@@ -25,5 +25,7 @@
     "sign_visibility": "shown",
     "watermark_pos": "center",
     "watermark_img_b64": "",
-    "hand_sig_img_b64": ""
+    "hand_sig_img_b64": "",
+    "hand_sig_pos": "center",
+    "hand_sig_index": "top"
 }

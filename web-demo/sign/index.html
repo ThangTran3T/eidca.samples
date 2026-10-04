@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ký số PDF – eIDCA</title>
-  <meta name="description" content="Demo ký số tài liệu PDF sử dụng eIDCA API – hỗ trợ USB Token, CCCD NFC" />
+  <title>Ký số PDF/XML – VNeCA</title>
+  <meta name="description" content="Demo ký số tài liệu PDF/XML sử dụng VNeCA API – hỗ trợ USB Token, CCCD NFC" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -635,7 +635,7 @@
   <header>
     <div class="logo-badge">✍️</div>
     <div>
-      <h1>Ký số PDF <span>eIDCA</span></h1>
+      <h1>Ký số tài liệu <span>VNeCA</span></h1>
     </div>
   </header>
 
@@ -647,11 +647,11 @@
 
       <!-- 1. Upload -->
       <div>
-        <p class="section-title">📄 Chọn tài liệu PDF</p>
+        <p class="section-title">📄 Chọn tài liệu PDF/XML</p>
         <label class="drop-zone" id="dropZone">
-          <input type="file" id="pdfFileInput" accept="application/pdf" />
+          <input type="file" id="pdfFileInput" accept="application/pdf, text/xml, application/xml, .pdf, .xml" />
           <div class="drop-icon">📂</div>
-          <div class="drop-label"><strong>Kéo thả</strong> hoặc nhấn để chọn file PDF</div>
+          <div class="drop-label"><strong>Kéo thả</strong> hoặc nhấn để chọn file PDF/XML</div>
         </label>
         <div class="file-info" id="fileInfo">
           <span>📄</span>
@@ -670,6 +670,7 @@
               <option value="ANY">ANY – Tự động chọn</option>
               <option value="USB_TOKEN">USB_TOKEN – USB Token</option>
               <option value="CCCD_NFC">CCCD_NFC – CCCD NFC</option>
+              <option value="VNEID">VNEID – VNeID Remote Signing</option>
             </select>
           </div>
           <div class="field">
@@ -681,15 +682,15 @@
             <input type="text" id="userId" placeholder="VD: 034080001405" />
           </div>
           <div class="field">
-            <label for="eidcaUrl">eIDCA Service URL <small style="color:var(--muted)">(chạy trên máy
+            <label for="VNeCAUrl">VNeCA Service URL <small style="color:var(--muted)">(chạy trên máy
                 bạn)</small></label>
-            <input type="text" id="eidcaUrl" value="https://127.0.0.1:23458/api/sign-document"
-              onchange="localStorage.setItem('eidca_url', this.value)" />
+            <input type="text" id="VNeCAUrl" value="http://127.0.0.1:17889/api/sign-document"
+              onchange="localStorage.setItem('VNeCA_url', this.value)" />
           </div>
           <div class="info-box" id="archBox">
-            ℹ️ <strong>eIDCA chạy trên máy tính của bạn</strong><br />
-            Trình duyệt sẽ gọi thẳng <code>127.0.0.1:23456</code> – không qua server.<br />
-            Nếu bị chặn (CORS / PNA), yêu cầu đội eIDCA bổ sung header cho service.
+            ℹ️ <strong>VNeCA chạy trên máy tính của bạn</strong><br />
+            Trình duyệt sẽ gọi thẳng <code>127.0.0.1:17889</code> – không qua server.<br />
+            Nếu bị chặn (CORS / PNA), yêu cầu đội VNeCA bổ sung header cho service.
           </div>
         </div>
       </div>
@@ -736,7 +737,41 @@
             </div>
             <div class="field full">
               <label>JSON sign_props (nâng cao – tự nhập ghi đè)</label>
-              <textarea id="spRaw" placeholder="Để trống để dùng form trên"></textarea>
+              <textarea id="spRaw" placeholder="Để trống để dùng form trên">{
+  "page": 1,
+  "find_text": [
+    "NGƯỜI BỆNH/THÂN NHÂN",
+    "Xác nhận của người bệnh (Ký, ghi rõ họ tên)",
+    "Xác nhận của người bệnh"
+  ],
+  "lLx": 100,
+  "lLy": 100,
+  "width": 203,
+  "height": 78,
+  "template": "center",
+  "show_info": [
+    "reason",
+    "contact",
+"name",
+    "date"
+  ],
+  "location": "",
+  "location_label": "",
+  "reason": "Đã được ký số bởi:",
+  "reason_label": "",
+  "contact": "",
+  "name":"FULL_NAME",
+  "date_label": "Ngày ký ",
+  "text_color": "#ff0033",
+  "font_size": 12,
+  "sign_visibility": "shown",
+  "watermark_pos": "center",
+  "watermark_img_b64": "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",
+  "hand_sig_img_b64": "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",
+  "hand_sig_pos": "center",
+  "hand_sig_index": "bottom"
+}
+</textarea>
             </div>
           </div>
         </div>
@@ -746,10 +781,10 @@
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto;">
         <!-- PNA / CORS warning -->
         <div class="cors-banner" id="pnaBanner" style="display:none;">
-          🚫 <strong>Trình duyệt chặn kết nối tới eIDCA!</strong><br />
-          Trang <strong id="currentOrigin"></strong> → <code>127.0.0.1:23456</code> bị Chrome chặn (PNA
+          🚫 <strong>Trình duyệt chặn kết nối tới VNeCA!</strong><br />
+          Trang <strong id="currentOrigin"></strong> → <code>127.0.0.1:17889</code> bị Chrome chặn (PNA
           policy).<br /><br />
-          ✅ <strong>Yêu cầu đội eIDCA thêm CORS headers vào service:</strong><br />
+          ✅ <strong>Yêu cầu đội VNeCA thêm CORS headers vào service:</strong><br />
           <code>Access-Control-Allow-Origin: *</code><br />
           <code>Access-Control-Allow-Private-Network: true</code><br />
           <code>Access-Control-Allow-Headers: Content-Type</code>
@@ -786,7 +821,7 @@
       <div class="canvas-wrap" id="canvasWrap">
         <div class="pdf-placeholder" id="pdfPlaceholder">
           <div class="ph-icon">📑</div>
-          <p>Chọn file PDF để xem trước tại đây</p>
+          <p>Chọn file PDF để xem trước tại đây (XML không hỗ trợ xem trước)</p>
         </div>
       </div>
 
@@ -802,7 +837,7 @@
     // ─────────────────────────────────────────────
     // API URL management
     function getApiUrl() {
-      return document.getElementById('eidcaUrl').value.trim();
+      return document.getElementById('VNeCAUrl').value.trim();
     }
 
     function isLocalhost() {
@@ -812,8 +847,8 @@
 
     // Restore saved URL + show PNA warning if on public domain
     (function initApiConfig() {
-      const saved = localStorage.getItem('eidca_url');
-      if (saved) document.getElementById('eidcaUrl').value = saved;
+      const saved = localStorage.getItem('VNeCA_url');
+      if (saved) document.getElementById('VNeCAUrl').value = saved;
 
       // If accessed from public domain → warn about PNA (Chrome blocks public → loopback)
       if (!isLocalhost()) {
@@ -890,7 +925,7 @@
       e.preventDefault();
       dropZone.classList.remove('dragover');
       const file = e.dataTransfer.files[0];
-      if (file && file.type === 'application/pdf') handleFile(file);
+      if (file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.xml'))) handleFile(file);
     });
     pdfFileInput.addEventListener('change', e => {
       if (e.target.files[0]) handleFile(e.target.files[0]);
@@ -908,13 +943,6 @@
       btnDownload.classList.remove('show');
       hideStatus();
 
-      // Read as ArrayBuffer for PDF.js (will be transferred/detached after use)
-      const readerArr = new FileReader();
-      readerArr.onload = e => {
-        loadPDF(e.target.result); // PDF.js may detach this buffer – that's OK
-      };
-      readerArr.readAsArrayBuffer(file);
-
       // Read as base64 separately – stays intact for the sign API call
       const readerB64 = new FileReader();
       readerB64.onload = e => {
@@ -922,6 +950,27 @@
         pdfB64 = e.target.result.split(',')[1];
       };
       readerB64.readAsDataURL(file);
+
+      const isXml = file.name.toLowerCase().endsWith('.xml');
+      if (isXml) {
+         pdfDoc = null;
+         canvasWrap.querySelectorAll('.page-canvas-container').forEach(el => el.remove());
+         pdfPlaceholder.style.display = 'flex';
+         pdfPlaceholder.innerHTML = '<div class="ph-icon">📝</div><p>File XML đã chọn. (Không hỗ trợ xem trước)</p>';
+         btnPrev.disabled = true;
+         btnNext.disabled = true;
+         btnZoomIn.disabled = true;
+         btnZoomOut.disabled = true;
+         pageInfo.textContent = '– / –';
+         return;
+      }
+
+      // Read as ArrayBuffer for PDF.js (will be transferred/detached after use)
+      const readerArr = new FileReader();
+      readerArr.onload = e => {
+        loadPDF(e.target.result); // PDF.js may detach this buffer – that's OK
+      };
+      readerArr.readAsArrayBuffer(file);
     }
 
     function formatBytes(b) {
@@ -934,6 +983,7 @@
     // Load & render PDF
     async function loadPDF(buffer) {
       try {
+        pdfPlaceholder.innerHTML = '<div class="ph-icon">📑</div><p>Chọn file PDF để xem trước tại đây (XML không hỗ trợ xem trước)</p>';
         pdfDoc = await pdfjsLib.getDocument({ data: buffer }).promise;
         totalPages = pdfDoc.numPages;
         currentPage = 1;
@@ -1120,11 +1170,13 @@
       try {
         // Build payload – use pre-stored base64 (ArrayBuffer was consumed by PDF.js)
         const payload = {
-          pdf_base64: pdfB64,
+          file_base64: pdfB64,
           method_code: document.getElementById('methodCode').value,
           user_id: document.getElementById('userId').value.trim() || idNumber,
           id_number: idNumber,
-          sign_props: buildSignPropsJsonStr()
+          option: {
+            sign_props: buildSignPropsJsonStr()
+          }
         };
 
         const apiUrl = getApiUrl();
@@ -1139,15 +1191,18 @@
 
         const data = await response.json();
 
-        if (data.status === 'SUCCESS' && data.signed_pdf_base64) {
-          signedPdfB64 = data.signed_pdf_base64;
+        if (data.status === 'SUCCESS' && (data.signed_file_base64 || data.signed_pdf_base64)) {
+          signedPdfB64 = data.signed_file_base64 || data.signed_pdf_base64;
           showStatus('success', '✅', `Ký thành công! Mã GD: ${data.transaction_id || '–'}`);
           btnDownload.classList.add('show');
+          btnDownload.innerHTML = fileName.textContent.toLowerCase().endsWith('.xml') ? '⬇️ Tải file XML đã ký' : '⬇️ Tải file PDF đã ký';
 
-          // Preview signed PDF
-          const signedBuffer = base64ToArrayBuffer(signedPdfB64);
-          pdfBytes = signedBuffer;
-          await loadPDF(signedBuffer);
+          // Preview signed PDF if it's not XML
+          const isXml = fileName.textContent.toLowerCase().endsWith('.xml');
+          if (!isXml) {
+            const signedBuffer = base64ToArrayBuffer(signedPdfB64);
+            await loadPDF(signedBuffer);
+          }
         } else {
           const msg = data.message || data.error || JSON.stringify(data);
           showStatus('error', '❌', 'Ký thất bại: ' + msg);
@@ -1162,7 +1217,7 @@
             showStatus('error', '🚫', 'Không kết nối được. File đang mở bằng file:// – trình duyệt chặn CORS. Xem hướng dẫn bên dưới.');
             document.getElementById('corsBanner').classList.add('show');
           } else {
-            showStatus('error', '🔌', 'Không thể kết nối tới API. Kiểm tra service eIDCA đã chạy trên cổng 23456 chưa.');
+            showStatus('error', '🔌', 'Không thể kết nối tới API. Kiểm tra service VNeCA đã chạy trên cổng 17889 chưa.');
           }
         } else {
           showStatus('error', '❌', err.message);
@@ -1192,7 +1247,7 @@
       try {
         await fetch(pingUrl, { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(4000) });
         // Reached here = server responded (even if opaque) = service is running
-        showStatus('success', '✅', 'eIDCA service đang chạy và có thể kết nối được!');
+        showStatus('success', '✅', 'VNeCA service đang chạy và có thể kết nối được!');
         document.getElementById('pnaBanner').style.display = 'none';
       } catch (err) {
         if (!isLocalhost()) {
@@ -1200,7 +1255,7 @@
           showStatus('error', '🚫', 'Bị chặn bởi Chrome PNA policy. Xem hướng dẫn phía dưới để fix.');
           document.getElementById('pnaBanner').style.display = 'block';
         } else {
-          showStatus('error', '🔌', 'Không kết nối được. eIDCA service chưa chạy hoặc sai URL.');
+          showStatus('error', '🔌', 'Không kết nối được. VNeCA service chưa chạy hoặc sai URL.');
         }
       } finally {
         btnTestConn.disabled = false;
@@ -1210,16 +1265,17 @@
 
 
     // ─────────────────────────────────────────────
-    // Download signed PDF
+    // Download signed file
     btnDownload.addEventListener('click', () => {
       if (!signedPdfB64) return;
+      const isXml = fileName.textContent.toLowerCase().endsWith('.xml');
       const bytes = base64ToArrayBuffer(signedPdfB64);
-      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const blob = new Blob([bytes], { type: isXml ? 'application/xml' : 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const origName = fileName.textContent.replace(/\.pdf$/i, '');
+      const origName = fileName.textContent.replace(/\.(pdf|xml)$/i, '');
       a.href = url;
-      a.download = origName + '_signed.pdf';
+      a.download = origName + '_signed.' + (isXml ? 'xml' : 'pdf');
       document.body.appendChild(a);
       a.click();
       a.remove();

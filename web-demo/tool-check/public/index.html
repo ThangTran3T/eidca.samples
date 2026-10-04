@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Kiểm tra chữ ký số XMLDSig và PDF/CMS">
+    <title>VNeCA Signature Check</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" type="module"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="brand-mark" aria-hidden="true">V</div>
+        <div>
+          <p class="eyebrow">VNeCA TOOLKIT</p>
+          <h1>Kiểm tra chữ ký số</h1>
+          <p class="subtitle">Xác minh tính toàn vẹn XMLDSig và chữ ký CMS/PAdES trong PDF ngay trên máy chủ.</p>
+        </div>
+      </header>
+
+      <section class="upload-panel" aria-labelledby="upload-title">
+        <div class="panel-heading">
+          <div>
+            <p class="step">01 · Chọn tài liệu</p>
+            <h2 id="upload-title">Tải lên PDF hoặc XML</h2>
+          </div>
+          <span class="privacy-pill">Không lưu file</span>
+        </div>
+
+        <label class="drop-zone" id="drop-zone" for="file-input" tabindex="0">
+          <input id="file-input" type="file" accept=".pdf,.xml,application/pdf,application/xml,text/xml">
+          <span class="upload-icon" aria-hidden="true">↑</span>
+          <span class="drop-title">Kéo thả file vào đây</span>
+          <span class="drop-copy">hoặc bấm để chọn · tối đa 50 MB</span>
+        </label>
+
+        <div class="selection hidden" id="selection">
+          <div class="file-symbol" id="file-symbol">XML</div>
+          <div class="file-copy">
+            <strong id="file-name"></strong>
+            <span id="file-size"></span>
+          </div>
+          <button class="ghost-button" id="clear-button" type="button">Đổi file</button>
+        </div>
+
+        <button class="primary-button" id="verify-button" type="button" disabled>
+          <span id="button-label">Kiểm tra chữ ký</span>
+          <span class="spinner hidden" id="spinner" aria-hidden="true"></span>
+        </button>
+        <p class="request-error hidden" id="request-error" role="alert"></p>
+      </section>
+
+      <section class="results hidden" id="results" aria-live="polite">
+        <div class="result-summary" id="result-summary">
+          <div class="status-icon" id="status-icon">✓</div>
+          <div>
+            <p class="step">02 · Kết quả xác minh</p>
+            <h2 id="status-title"></h2>
+            <p id="status-description"></p>
+          </div>
+          <span class="status-badge" id="status-badge"></span>
+        </div>
+
+        <div class="metadata-grid" id="metadata-grid"></div>
+        <div class="signature-list" id="signature-list"></div>
+
+        <details class="raw-result">
+          <summary>Xem JSON đầy đủ</summary>
+          <pre id="raw-json"></pre>
+        </details>
+      </section>
+
+      <footer>
+        <span>API: <code>POST /api/verify</code></span>
+        <span>Kiểm tra mật mã không thay thế đánh giá pháp lý hoặc trạng thái thu hồi chứng thư.</span>
+      </footer>
+    </main>
+  </body>
+</html>

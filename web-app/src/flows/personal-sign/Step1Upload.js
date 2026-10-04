@@ -18,7 +18,7 @@
  */
 
 import { renderCodePanels } from "../../ui/CodePanel.js";
-import { signGetChallenge }  from "../../api/eidcaClient.js";
+import { signGetChallenge } from "../../api/eidcaClient.js";
 
 // PDF.js CDN (lazy-load khi cần)
 const PDFJS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs";
@@ -129,14 +129,14 @@ export class Step1Upload {
               <!-- Hộp chữ ký kéo thả -->
               <div id="sp-sig-box" style="
                 display:none;position:absolute;
-                border:2px solid #6366f1;
+                border:1px solid rgba(52, 211, 153, 0.3);
                 cursor:move;box-sizing:border-box;border-radius:4px;
                 user-select:none;touch-action:none;overflow:hidden;
               ">
                 <!-- Preview nội dung chữ ký -->
                 <div id="sp-sig-preview" style="
                   position:absolute;inset:0;pointer-events:none;
-                  background:transparent;font-family:Arial,sans-serif;
+                  background:rgb(52 211 153 / 3%);font-family:Arial,sans-serif;
                   overflow:hidden;
                 "></div>
                 <!-- Tọa độ -->
@@ -156,6 +156,22 @@ export class Step1Upload {
             </div>
             <div style="font-size:0.7rem;color:var(--text-muted);margin-top:-4px;">
               💡 Kéo hộp chữ ký để di chuyển • Kéo góc phải-dưới để thay đổi kích thước
+            </div>
+
+            <!-- Định vị từ khóa tự động -->
+            <div style="background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;margin-top:2px;">
+              <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:6px;">
+                🎯 Định vị tự động theo từ khóa trong PDF
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input class="form-input" id="sp-search-keyword" type="text"
+                  placeholder="Nhập từ khóa (vd: Người ký, Bên A, Ký bởi...)"
+                  style="flex:1;" />
+                <button type="button" id="sp-btn-search-text" class="btn btn-secondary btn-sm" style="white-space:nowrap;gap:4px;">
+                  🔍 Tìm & Định vị
+                </button>
+              </div>
+              <div id="sp-search-status" style="font-size:0.72rem;margin-top:6px;min-height:16px;"></div>
             </div>
 
             <!-- Vị trí trên trang (số) — đồng bộ với drag-drop -->
@@ -180,14 +196,22 @@ export class Step1Upload {
                 <label class="form-label">Cao</label>
                 <input class="form-input" id="sp-height" type="number" value="90"/>
               </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label class="form-label">Từ khóa tìm vị trí (find_text)</label>
+                <input class="form-input" id="sp-find-text" type="text" value="" placeholder="Ví dụ: Người lập biểu (bỏ trống để dùng lLx, lLy)"/>
+              </div>
             </div>
 
             <!-- Nội dung hiển thị -->
             <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Nội dung</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
               <div class="form-group">
+                <label class="form-label">Tên người ký (name)</label>
+                <input class="form-input" id="sp-name" type="text" value="Nguyễn Văn A"/>
+              </div>
+              <div class="form-group">
                 <label class="form-label">Lý do ký (reason)</label>
-                <input class="form-input" id="sp-reason"  type="text" value="Ký hợp đồng điện tử"/>
+                <input class="form-input" id="sp-reason" type="text" value="Ký hợp đồng điện tử"/>
               </div>
               <div class="form-group">
                 <label class="form-label">Địa điểm (location)</label>
@@ -228,9 +252,10 @@ export class Step1Upload {
               <div class="form-group">
                 <label class="form-label">Bố cục (template)</label>
                 <select class="form-input" id="sp-template">
-                  <option value="right">right — logo phải</option>
-                  <option value="left">left — logo trái</option>
-                  <option value="text_only">text_only — không dùng logo</option>
+                  <option value="right">right — logo/chữ ký phải</option>
+                  <option value="left">left — logo/chữ ký trái</option>
+                  <option value="center">center — chữ ký tay nằm chính giữa (index trên cùng)</option>
+                  <option value="text_only">text_only — không dùng logo/chữ ký tay</option>
                 </select>
               </div>
             </div>
@@ -238,7 +263,7 @@ export class Step1Upload {
             <!-- show_info toggles -->
             <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-top:4px;">Thành phần hiển thị (show_info)</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;" id="sp-show-info-group">
-              ${["reason","location","contact","name","org","date"].map(k => `
+              ${["reason", "location", "contact", "name", "org", "date"].map(k => `
                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;
                   padding:5px 12px;border-radius:20px;border:1px solid var(--border);
                   background:var(--bg-card-2);font-size:0.75rem;color:var(--text-secondary);
@@ -253,7 +278,24 @@ export class Step1Upload {
             <!-- Chữ ký tay -->
             <div id="sp-handsig-section" style="margin-top:4px;">
               <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:6px;">
-                Chữ ký tay (hand_sig_img_b64) <span style="color:var(--color-primary);font-size:0.65rem;font-weight:400;">— Chỉ áp dụng với template right/left</span>
+                Chữ ký tay (hand_sig_img_b64) <span style="color:var(--color-primary);font-size:0.65rem;font-weight:400;">— Áp dụng khi template là right, left hoặc center</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Vị trí (hand_sig_pos)</label>
+                  <select class="form-input" id="sp-handsig-pos">
+                    <option value="center">center — chính giữa (overlay)</option>
+                    <option value="right">right — bên phải</option>
+                    <option value="left">left — bên trái</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Thứ tự Lớp / Index (hand_sig_index)</label>
+                  <select class="form-input" id="sp-handsig-index">
+                    <option value="top">top — index trên cùng (nằm đè chữ)</option>
+                    <option value="bottom">bottom — index bên dưới</option>
+                  </select>
+                </div>
               </div>
               <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-md);padding:8px;">
                 <canvas id="sp-sig-canvas"
@@ -261,7 +303,8 @@ export class Step1Upload {
                   style="display:block;width:100%;aspect-ratio:1/1;cursor:crosshair;
                     border-radius:6px;background:transparent;touch-action:none;"
                 ></canvas>
-                <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+                <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;">
+                  <button type="button" id="sp-sig-sample" class="btn btn-secondary btn-sm">✍️ Thêm chữ ký mẫu</button>
                   <button type="button" id="sp-sig-clear" class="btn btn-secondary btn-sm">🗑 Xóa</button>
                   <span id="sp-sig-status" style="font-size:0.72rem;color:var(--text-muted);">Chưa vẽ</span>
                 </div>
@@ -344,7 +387,7 @@ export class Step1Upload {
 
     // Sự kiện chọn file
     const fileInput = this._el.querySelector("#s1-file");
-    const dropzone  = this._el.querySelector("#s1-dropzone");
+    const dropzone = this._el.querySelector("#s1-dropzone");
 
     fileInput.addEventListener("change", (e) => {
       if (e.target.files.length) this._onFilesSelected([...e.target.files]);
@@ -382,13 +425,42 @@ export class Step1Upload {
     // Cập nhật payload + sig preview khi thay đổi sign_props
     const signPropsContainer = this._el.querySelector("details");
     if (signPropsContainer) {
-      signPropsContainer.addEventListener("input",  () => { this._updateRequestPanel(); this._renderSigPreview(); });
+      signPropsContainer.addEventListener("input", () => { this._updateRequestPanel(); this._renderSigPreview(); });
       signPropsContainer.addEventListener("change", () => { this._updateRequestPanel(); this._renderSigPreview(); });
     }
 
     // Template change → ẩn/hiện canvas chữ ký tay
     const templateSel = this._el.querySelector("#sp-template");
     templateSel?.addEventListener("change", () => this._onTemplateChange());
+
+    const handSigPosSel = this._el.querySelector("#sp-handsig-pos");
+    handSigPosSel?.addEventListener("change", () => {
+      const val = handSigPosSel.value;
+      if (val === "center" && templateSel) templateSel.value = "center";
+      else if (val === "right" && templateSel && templateSel.value === "center") templateSel.value = "right";
+      else if (val === "left" && templateSel && templateSel.value === "center") templateSel.value = "left";
+      this._onTemplateChange();
+      this._updateRequestPanel();
+      this._renderSigPreview();
+    });
+
+    const handSigIdxSel = this._el.querySelector("#sp-handsig-index");
+    handSigIdxSel?.addEventListener("change", () => {
+      this._updateRequestPanel();
+      this._renderSigPreview();
+    });
+
+    // Tìm kiếm từ khóa định vị chữ ký
+    const btnSearchText = this._el.querySelector("#sp-btn-search-text");
+    const inpSearchText = this._el.querySelector("#sp-search-keyword");
+    btnSearchText?.addEventListener("click", () => this._searchKeywordAndPosition());
+    inpSearchText?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        this._searchKeywordAndPosition();
+      }
+    });
+
     this._onTemplateChange();
 
     // Canvas vẽ chữ ký tay
@@ -402,10 +474,10 @@ export class Step1Upload {
       reader.onload = (ev) => {
         this._watermarkBase64 = ev.target.result.split(",")[1];
         const preview = this._el.querySelector("#sp-watermark-preview");
-        const img     = this._el.querySelector("#sp-watermark-img");
-        const name    = this._el.querySelector("#sp-watermark-name");
+        const img = this._el.querySelector("#sp-watermark-img");
+        const name = this._el.querySelector("#sp-watermark-name");
         if (preview) preview.style.display = "flex";
-        if (img)  img.src = ev.target.result;
+        if (img) img.src = ev.target.result;
         if (name) name.textContent = file.name;
         this._updateRequestPanel();
         this._renderSigPreview();
@@ -461,13 +533,13 @@ export class Step1Upload {
     listEl.style.display = this._files.length ? "flex" : "none";
     listEl.innerHTML = this._files.map((f, i) => `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;
-        background:${ i === this._activeFileIdx ? 'var(--color-primary-dim)' : 'var(--bg-card-2)'};
-        border:1px solid ${ i === this._activeFileIdx ? 'var(--color-primary)' : 'var(--border)'};
+        background:${i === this._activeFileIdx ? 'var(--color-primary-dim)' : 'var(--bg-card-2)'};
+        border:1px solid ${i === this._activeFileIdx ? 'var(--color-primary)' : 'var(--border)'};
         border-radius:var(--radius-md);cursor:pointer;transition:all 0.15s;"
         data-file-idx="${i}">
         <span>📄</span>
         <span style="flex:1;font-size:0.78rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
-        <span style="font-size:0.7rem;color:var(--text-muted);flex-shrink:0;">${(f.size/1024).toFixed(0)} KB</span>
+        <span style="font-size:0.7rem;color:var(--text-muted);flex-shrink:0;">${(f.size / 1024).toFixed(0)} KB</span>
         <button data-remove="${i}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:0 2px;">✕</button>
       </div>
     `).join("");
@@ -493,10 +565,10 @@ export class Step1Upload {
         this._el.querySelector("#s1-btn-upload").disabled = !this._files.length;
         if (!this._files.length) {
           this._el.querySelector("#s1-dropzone").classList.remove("has-file");
-          const c = this._el.querySelector("#sp-pdf-canvas"); if (c) c.style.display="none";
-          const b = this._el.querySelector("#sp-sig-box");    if (b) b.style.display="none";
-          const n = this._el.querySelector("#sp-page-nav");   if (n) n.style.display="none";
-          const p = this._el.querySelector("#sp-pdf-placeholder"); if (p) p.style.display="";
+          const c = this._el.querySelector("#sp-pdf-canvas"); if (c) c.style.display = "none";
+          const b = this._el.querySelector("#sp-sig-box"); if (b) b.style.display = "none";
+          const n = this._el.querySelector("#sp-page-nav"); if (n) n.style.display = "none";
+          const p = this._el.querySelector("#sp-pdf-placeholder"); if (p) p.style.display = "";
         } else if (this._files[this._activeFileIdx]) {
           this._renderPdfPreview(this._files[this._activeFileIdx]);
         }
@@ -515,55 +587,65 @@ export class Step1Upload {
     const showInfoChecked = [...this._el.querySelectorAll(".sp-show-info:checked")]
       .map(cb => cb.value);
     const template = q("#sp-template")?.value || "right";
+    const handSigPos = q("#sp-handsig-pos")?.value || (template === "center" ? "center" : template);
+    const handSigIndex = q("#sp-handsig-index")?.value || (template === "center" ? "top" : "normal");
+
     return [{
-      page:            parseInt(q("#sp-page")?.value)     || 1,
-      lLx:             parseInt(q("#sp-llx")?.value)      || 65,
-      lLy:             parseInt(q("#sp-lly")?.value)      || 320,
-      width:           parseInt(q("#sp-width")?.value)    || 260,
-      height:          parseInt(q("#sp-height")?.value)   || 90,
+      find_text: q("#sp-find-text")?.value || "",
+      page: parseInt(q("#sp-page")?.value) || 1,
+      lLx: parseInt(q("#sp-llx")?.value) || 65,
+      lLy: parseInt(q("#sp-lly")?.value) || 320,
+      width: parseInt(q("#sp-width")?.value) || 260,
+      height: parseInt(q("#sp-height")?.value) || 90,
       template,
-      show_info:       showInfoChecked,
-      location:        q("#sp-location")?.value           || "Hà Nội",
-      location_label:  q("#sp-location-label")?.value    || "Tại: Phòng giao dịch",
-      reason:          q("#sp-reason")?.value             || "Ký hợp đồng điện tử",
-      reason_label:    "",
-      contact:         q("#sp-contact")?.value            || "Giám đốc",
-      contact_label:   "",
-      date_label:      q("#sp-date-label")?.value         || "Ngày ký",
-      text_color:      q("#sp-color")?.value              || "#ff0033",
-      font_size:       parseInt(q("#sp-fontsize")?.value) || 11,
-      sign_visibility: q("#sp-visibility")?.value         || "shown",
-      watermark_pos:   q("#sp-watermark-pos")?.value      || "center",
+      show_info: showInfoChecked,
+      name: q("#sp-name")?.value || "Nguyễn Văn A",
+      name_label: "",
+      location: q("#sp-location")?.value || "Hà Nội",
+      location_label: q("#sp-location-label")?.value || "Tại: Phòng giao dịch",
+      reason: q("#sp-reason")?.value || "Ký hợp đồng điện tử",
+      reason_label: "",
+      contact: q("#sp-contact")?.value || "Giám đốc",
+      contact_label: "",
+      date_label: q("#sp-date-label")?.value || "Ngày ký",
+      text_color: q("#sp-color")?.value || "#ff0033",
+      font_size: parseInt(q("#sp-fontsize")?.value) || 11,
+      sign_visibility: q("#sp-visibility")?.value || "shown",
+      watermark_pos: q("#sp-watermark-pos")?.value || "center",
       watermark_img_b64: this._watermarkBase64 || "",
-      hand_sig_img_b64:  (template === "right" || template === "left")
+      hand_sig_img_b64: (template !== "text_only")
         ? (this._handSigBase64 || "") : "",
+      hand_sig_pos: handSigPos,
+      hand_sig_index: handSigIndex,
     }];
   }
 
   // ─── Visual Signature Preview ────────────────────────────────────
 
-  /** Render n\u1ed9i dung tr\u1ef1c quan b\u00ean trong h\u1ed9p ch\u1eef k\u00fd */
+  /** Render nội dung trực quan bên trong hộp chữ ký */
   _renderSigPreview() {
     const preview = this._el?.querySelector("#sp-sig-preview");
     if (!preview) return;
     const q = (id) => this._el?.querySelector(id)?.value || "";
-    const show  = [...this._el.querySelectorAll(".sp-show-info:checked")].map(c => c.value);
-    const tpl   = q("#sp-template") || "right";
-    const color = q("#sp-color")    || "#ff0033";
-    const fs    = parseFloat(q("#sp-fontsize")) || 11;
-    const boxW  = parseFloat(this._el.querySelector("#sp-sig-box")?.style.width)  || 260;
-    const boxH  = parseFloat(this._el.querySelector("#sp-sig-box")?.style.height) || 90;
+    const show = [...this._el.querySelectorAll(".sp-show-info:checked")].map(c => c.value);
+    const tpl = q("#sp-template") || "right";
+    const pos = q("#sp-handsig-pos") || (tpl === "center" ? "center" : tpl);
+    const idx = q("#sp-handsig-index") || (tpl === "center" ? "top" : "normal");
+    const color = q("#sp-color") || "#ff0033";
+    const fs = parseFloat(q("#sp-fontsize")) || 11;
+    const boxW = parseFloat(this._el.querySelector("#sp-sig-box")?.style.width) || 260;
+    const boxH = parseFloat(this._el.querySelector("#sp-sig-box")?.style.height) || 90;
     const scale = Math.min(boxW / 260, boxH / 90);
-    const fsPx  = Math.max(5, Math.round(fs * scale * 0.82)) + "px";
-    const pad   = Math.max(2, Math.round(4 * scale)) + "px";
+    const fsPx = Math.max(5, Math.round(fs * scale * 0.82)) + "px";
+    const pad = Math.max(2, Math.round(4 * scale)) + "px";
 
     const fields = {
-      name:     "Nguy\u1ec5n V\u0103n A",
-      org:      "C\u00f4ng ty TNHH ABC",
-      reason:   q("#sp-reason"),
+      name: q("#sp-name") || "Nguyễn Văn A",
+      org: "Công ty TNHH ABC",
+      reason: q("#sp-reason"),
       location: q("#sp-location-label") || q("#sp-location"),
-      contact:  q("#sp-contact"),
-      date:     q("#sp-date-label") + ": " + new Date().toISOString().replace("Z", "+00:00").replace(/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2}).*/, "$1T$2" + (() => { const o = -new Date().getTimezoneOffset(); const s = o >= 0 ? "+" : "-"; const h = String(Math.floor(Math.abs(o)/60)).padStart(2,"0"); const m = String(Math.abs(o)%60).padStart(2,"0"); return s+h+":"+m; })()),
+      contact: q("#sp-contact"),
+      date: q("#sp-date-label") + ": " + new Date().toISOString().replace("Z", "+00:00").replace(/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2}).*/, "$1T$2" + (() => { const o = -new Date().getTimezoneOffset(); const s = o >= 0 ? "+" : "-"; const h = String(Math.floor(Math.abs(o) / 60)).padStart(2, "0"); const m = String(Math.abs(o) % 60).padStart(2, "0"); return s + h + ":" + m; })()),
     };
 
     const lines = show
@@ -571,31 +653,47 @@ export class Step1Upload {
       .map(k => `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;color:${color};">${fields[k]}</div>`)
       .join("");
 
-    const logoSize = Math.round(boxH * 0.72);
-    // Logo: hiển thị hand_sig nếu có, ngược lại placeholder
+    const isCenter = pos === "center" || tpl === "center";
+    const zIndexHandSig = idx === "top" || isCenter ? 10 : 1;
+    const zIndexText = 2;
+
+    // Logo / Handwritten signature HTML
     const logoHtml = tpl !== "text_only"
       ? (this._handSigBase64
-        ? `<img src="data:image/png;base64,${this._handSigBase64}" style="height:100%;max-width:45%;object-fit:contain;flex-shrink:0;">`
-        : `<div style="flex-shrink:0;width:${Math.round(boxH*0.7)}px;height:${Math.round(boxH*0.7)}px;display:flex;align-items:center;justify-content:center;">
-             <svg viewBox="0 0 100 100" style="width:80%;height:80%;" xmlns="http://www.w3.org/2000/svg">
-               <polyline points="10,55 38,80 90,20" fill="none" stroke="#407F3E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-             </svg>
-           </div>`)
+        ? (isCenter
+          ? `<img src="data:image/png;base64,${this._handSigBase64}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:75%;height:75%;object-fit:contain;z-index:${zIndexHandSig};pointer-events:none;">`
+          : `<img src="data:image/png;base64,${this._handSigBase64}" style="height:100%;max-width:45%;object-fit:contain;flex-shrink:0;z-index:${zIndexHandSig};">`
+        )
+        : (isCenter
+          ? `<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:80%;height:80%;display:flex;align-items:center;justify-content:center;z-index:${zIndexHandSig};pointer-events:none;border:1px dashed rgba(99,102,241,0.6);border-radius:6px;background:rgba(99,102,241,0.08);">
+                 <span style="font-size:${fsPx};color:#6366f1;font-weight:700;white-space:nowrap;">✍️ Chữ ký tay (Chính giữa)</span>
+               </div>`
+          : `<div style="flex-shrink:0;width:${Math.round(boxH * 0.7)}px;height:${Math.round(boxH * 0.7)}px;display:flex;align-items:center;justify-content:center;z-index:${zIndexHandSig};">
+                 <svg viewBox="0 0 100 100" style="width:80%;height:80%;" xmlns="http://www.w3.org/2000/svg">
+                   <polyline points="10,55 38,80 90,20" fill="none" stroke="#407F3E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                 </svg>
+               </div>`
+        )
+      )
       : "";
+
     // Watermark: phủ toàn bộ box mờ
     const watermarkHtml = this._watermarkBase64
-      ? `<img src="data:image/png;base64,${this._watermarkBase64}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0.18;pointer-events:none;">`
+      ? `<img src="data:image/png;base64,${this._watermarkBase64}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0.18;pointer-events:none;z-index:0;">`
       : "";
-    const textBlock = `<div style="flex:1;overflow:hidden;font-size:${fsPx};">${lines || '<span style="color:#aaa;font-size:9px;">Ch\u01b0a c\u00f3 n\u1ed9i dung</span>'}</div>`;
 
-    preview.style.cssText = `position:absolute;inset:0;pointer-events:none;background:transparent;
+    const textBlock = `<div style="flex:1;overflow:hidden;font-size:${fsPx};position:relative;z-index:${zIndexText};">${lines || '<span style="color:#aaa;font-size:9px;">Chưa có nội dung</span>'}</div>`;
+
+    preview.style.cssText = `position:absolute;inset:0;pointer-events:none;background:rgba(52,211,153,0.03);
       font-family:Arial,sans-serif;overflow:hidden;display:flex;align-items:center;
       padding:${pad};gap:${pad};`;
-    preview.innerHTML = (tpl === "left"
-      ? logoHtml + textBlock
-      : tpl === "right"
-        ? textBlock + logoHtml
-        : textBlock)
+    preview.innerHTML = (isCenter
+      ? textBlock + logoHtml
+      : tpl === "left"
+        ? logoHtml + textBlock
+        : tpl === "right"
+          ? textBlock + logoHtml
+          : textBlock)
       + watermarkHtml;
   }
 
@@ -608,11 +706,11 @@ export class Step1Upload {
     const tpl = {
       ...props,
       watermark_img_b64: this._watermarkBase64 || "",
-      hand_sig_img_b64:  this._handSigBase64   || "",
+      hand_sig_img_b64: this._handSigBase64 || "",
     };
-    const blob  = new Blob([JSON.stringify(tpl, null, 2)], { type: "application/json" });
-    const url   = URL.createObjectURL(blob);
-    const a     = document.createElement("a");
+    const blob = new Blob([JSON.stringify(tpl, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
     a.href = url; a.download = "sign_props_template_" + Date.now() + ".json"; a.click();
     URL.revokeObjectURL(url);
     const st = this._el?.querySelector("#sp-tpl-status");
@@ -626,21 +724,23 @@ export class Step1Upload {
       try {
         const tpl = JSON.parse(ev.target.result);
         const set = (id, v) => { const el = this._el?.querySelector(id); if (el && v !== undefined) el.value = v; };
-        set("#sp-page",           tpl.page);
-        set("#sp-llx",            tpl.lLx);
-        set("#sp-lly",            tpl.lLy);
-        set("#sp-width",          tpl.width);
-        set("#sp-height",         tpl.height);
-        set("#sp-template",       tpl.template);
-        set("#sp-reason",         tpl.reason);
-        set("#sp-location",       tpl.location);
+        set("#sp-page", tpl.page);
+        set("#sp-llx", tpl.lLx);
+        set("#sp-lly", tpl.lLy);
+        set("#sp-width", tpl.width);
+        set("#sp-height", tpl.height);
+        set("#sp-template", tpl.template);
+        set("#sp-reason", tpl.reason);
+        set("#sp-location", tpl.location);
         set("#sp-location-label", tpl.location_label);
-        set("#sp-contact",        tpl.contact);
-        set("#sp-date-label",     tpl.date_label);
-        set("#sp-color",          tpl.text_color);
-        set("#sp-fontsize",       tpl.font_size);
-        set("#sp-visibility",     tpl.sign_visibility);
-        set("#sp-watermark-pos",  tpl.watermark_pos);
+        set("#sp-contact", tpl.contact);
+        set("#sp-date-label", tpl.date_label);
+        set("#sp-color", tpl.text_color);
+        set("#sp-fontsize", tpl.font_size);
+        set("#sp-visibility", tpl.sign_visibility);
+        set("#sp-watermark-pos", tpl.watermark_pos);
+        set("#sp-handsig-pos", tpl.hand_sig_pos);
+        set("#sp-handsig-index", tpl.hand_sig_index);
         if (Array.isArray(tpl.show_info)) {
           this._el?.querySelectorAll(".sp-show-info").forEach(cb => {
             cb.checked = tpl.show_info.includes(cb.value);
@@ -653,13 +753,13 @@ export class Step1Upload {
         // Restore watermark
         if (tpl.watermark_img_b64) {
           this._watermarkBase64 = tpl.watermark_img_b64;
-          const src     = "data:image/png;base64," + tpl.watermark_img_b64;
+          const src = "data:image/png;base64," + tpl.watermark_img_b64;
           const preview = this._el?.querySelector("#sp-watermark-preview");
-          const img     = this._el?.querySelector("#sp-watermark-img");
-          const name    = this._el?.querySelector("#sp-watermark-name");
+          const img = this._el?.querySelector("#sp-watermark-img");
+          const name = this._el?.querySelector("#sp-watermark-name");
           if (preview) preview.style.display = "flex";
-          if (img)     img.src = src;
-          if (name)    name.textContent = "(tải từ mẫu)";
+          if (img) img.src = src;
+          if (name) name.textContent = "(tải từ mẫu)";
         } else {
           this._watermarkBase64 = "";
         }
@@ -700,22 +800,22 @@ export class Step1Upload {
 
   /** Render PDF preview với hỗ trợ nhiều trang */
   async _renderPdfPreview(file) {
-    const wrap        = this._el.querySelector("#sp-pdf-preview-wrap");
+    const wrap = this._el.querySelector("#sp-pdf-preview-wrap");
     const placeholder = this._el.querySelector("#sp-pdf-placeholder");
-    const canvas      = this._el.querySelector("#sp-pdf-canvas");
-    const sigBox      = this._el.querySelector("#sp-sig-box");
-    const pageNav     = this._el.querySelector("#sp-page-nav");
+    const canvas = this._el.querySelector("#sp-pdf-canvas");
+    const sigBox = this._el.querySelector("#sp-sig-box");
+    const pageNav = this._el.querySelector("#sp-page-nav");
     if (!wrap || !canvas) return;
 
     placeholder.style.display = "none";
     canvas.style.display = "none";
-    if (sigBox)   sigBox.style.display = "none";
-    if (pageNav)  pageNav.style.display = "none";
+    if (sigBox) sigBox.style.display = "none";
+    if (pageNav) pageNav.style.display = "none";
 
     try {
       const pdfjsLib = await getPdfLib();
       const arrayBuf = await file.arrayBuffer();
-      this._pdfDoc     = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
+      this._pdfDoc = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
       this._totalPages = this._pdfDoc.numPages;
       this._currentPage = 1;
       await this._renderPage(this._currentPage);
@@ -730,18 +830,18 @@ export class Step1Upload {
   /** Render một trang cụ thể */
   async _renderPage(pageNum) {
     if (!this._pdfDoc) return;
-    const wrap   = this._el.querySelector("#sp-pdf-preview-wrap");
+    const wrap = this._el.querySelector("#sp-pdf-preview-wrap");
     const canvas = this._el.querySelector("#sp-pdf-canvas");
     if (!wrap || !canvas) return;
 
-    const page  = await this._pdfDoc.getPage(pageNum);
-    const maxW  = Math.min(wrap.clientWidth || 680, 700);
+    const page = await this._pdfDoc.getPage(pageNum);
+    const maxW = Math.min(wrap.clientWidth || 680, 700);
     const rawVp = page.getViewport({ scale: 1 });
     const scale = maxW / rawVp.width;
-    const vp    = page.getViewport({ scale });
+    const vp = page.getViewport({ scale });
 
     this._pdfViewport = vp;
-    canvas.width  = vp.width;
+    canvas.width = vp.width;
     canvas.height = vp.height;
     canvas.style.display = "block";
     wrap.style.height = `${vp.height}px`;
@@ -767,7 +867,7 @@ export class Step1Upload {
     if (!nav) return;
     const show = this._totalPages > 1;
     nav.style.display = show ? "flex" : "none";
-    if (ind)  ind.textContent  = `Trang ${this._currentPage} / ${this._totalPages}`;
+    if (ind) ind.textContent = `Trang ${this._currentPage} / ${this._totalPages}`;
     if (prev) prev.style.opacity = this._currentPage <= 1 ? "0.3" : "1";
     if (next) next.style.opacity = this._currentPage >= this._totalPages ? "0.3" : "1";
 
@@ -798,9 +898,9 @@ export class Step1Upload {
     if (!sigBox || !canvas || !this._pdfViewport) return;
 
     const rect = this._pdfToScreen(this._sigBox.x, this._sigBox.y, this._sigBox.w, this._sigBox.h);
-    sigBox.style.left   = rect.left   + "px";
-    sigBox.style.top    = rect.top    + "px";
-    sigBox.style.width  = rect.width  + "px";
+    sigBox.style.left = rect.left + "px";
+    sigBox.style.top = rect.top + "px";
+    sigBox.style.width = rect.width + "px";
     sigBox.style.height = rect.height + "px";
     sigBox.style.display = "block";
     this._updateSigBoxLabel();
@@ -808,25 +908,25 @@ export class Step1Upload {
 
   /** PDF (lLx, lLy = bottom-left origin) → screen pixels (top-left origin) */
   _pdfToScreen(lLx, lLy, w, h) {
-    const vp    = this._pdfViewport;
+    const vp = this._pdfViewport;
     const scale = vp.scale;
     // PDF Y: 0 = bottom, screen Y: 0 = top
-    const screenLeft   = lLx * scale;
+    const screenLeft = lLx * scale;
     const screenBottom = lLy * scale;
-    const screenH      = h   * scale;
-    const screenW      = w   * scale;
-    const screenTop    = vp.height - screenBottom - screenH;
+    const screenH = h * scale;
+    const screenW = w * scale;
+    const screenTop = vp.height - screenBottom - screenH;
     return { left: screenLeft, top: screenTop, width: screenW, height: screenH };
   }
 
   /** screen pixels (top-left) → PDF coords (bottom-left) */
   _screenToPdf(screenLeft, screenTop, screenW, screenH) {
-    const vp    = this._pdfViewport;
+    const vp = this._pdfViewport;
     const scale = vp.scale;
-    const lLx   = Math.round(screenLeft / scale);
-    const lLy   = Math.round((vp.height - screenTop - screenH) / scale);
-    const w     = Math.round(screenW / scale);
-    const h     = Math.round(screenH / scale);
+    const lLx = Math.round(screenLeft / scale);
+    const lLy = Math.round((vp.height - screenTop - screenH) / scale);
+    const w = Math.round(screenW / scale);
+    const h = Math.round(screenH / scale);
     return { lLx, lLy, w, h };
   }
 
@@ -839,9 +939,9 @@ export class Step1Upload {
   /** Đồng bộ _sigBox → form inputs */
   _syncBoxToInputs() {
     const q = (id) => this._el?.querySelector(id);
-    if (q("#sp-llx"))    q("#sp-llx").value    = this._sigBox.x;
-    if (q("#sp-lly"))    q("#sp-lly").value    = this._sigBox.y;
-    if (q("#sp-width"))  q("#sp-width").value  = this._sigBox.w;
+    if (q("#sp-llx")) q("#sp-llx").value = this._sigBox.x;
+    if (q("#sp-lly")) q("#sp-lly").value = this._sigBox.y;
+    if (q("#sp-width")) q("#sp-width").value = this._sigBox.w;
     if (q("#sp-height")) q("#sp-height").value = this._sigBox.h;
     this._updateRequestPanel();
   }
@@ -858,13 +958,13 @@ export class Step1Upload {
 
   /** Khởi tạo drag-move + drag-resize cho sig box */
   _initSigBoxDrag() {
-    const box    = this._el?.querySelector("#sp-sig-box");
+    const box = this._el?.querySelector("#sp-sig-box");
     const resize = this._el?.querySelector("#sp-sig-resize");
     const canvas = this._el?.querySelector("#sp-pdf-canvas");
     if (!box || !canvas) return;
 
     // Lắng nghe thay đổi tay từ inputs
-    ["#sp-llx","#sp-lly","#sp-width","#sp-height"].forEach(id => {
+    ["#sp-llx", "#sp-lly", "#sp-width", "#sp-height"].forEach(id => {
       this._el?.querySelector(id)?.addEventListener("input", () => this._syncInputsToBox());
     });
 
@@ -876,18 +976,18 @@ export class Step1Upload {
     const onStart = (e, m) => {
       e.preventDefault();
       e.stopPropagation();
-      mode   = m;
+      mode = m;
       const pt = e.touches ? e.touches[0] : e;
       startX = pt.clientX;
       startY = pt.clientY;
-      origLeft = parseFloat(box.style.left)  || 0;
-      origTop  = parseFloat(box.style.top)   || 0;
-      origW    = parseFloat(box.style.width) || 100;
-      origH    = parseFloat(box.style.height)|| 40;
+      origLeft = parseFloat(box.style.left) || 0;
+      origTop = parseFloat(box.style.top) || 0;
+      origW = parseFloat(box.style.width) || 100;
+      origH = parseFloat(box.style.height) || 40;
       document.addEventListener("mousemove", onMove);
-      document.addEventListener("mouseup",   onEnd);
+      document.addEventListener("mouseup", onEnd);
       document.addEventListener("touchmove", onMove, { passive: false });
-      document.addEventListener("touchend",  onEnd);
+      document.addEventListener("touchend", onEnd);
     };
 
     const onMove = (e) => {
@@ -903,15 +1003,15 @@ export class Step1Upload {
 
       if (mode === "move") {
         const newL = clamp(origLeft + dx, 0, maxX - origW);
-        const newT = clamp(origTop  + dy, 0, maxY - origH);
+        const newT = clamp(origTop + dy, 0, maxY - origH);
         box.style.left = newL + "px";
-        box.style.top  = newT + "px";
+        box.style.top = newT + "px";
         const pdf = this._screenToPdf(newL, newT, origW, origH);
         Object.assign(this._sigBox, { x: pdf.lLx, y: pdf.lLy, w: pdf.w, h: pdf.h });
       } else if (mode === "resize") {
         const newW = clamp(origW + dx, MIN_SIZE, maxX - origLeft);
         const newH = clamp(origH + dy, MIN_SIZE, maxY - origTop);
-        box.style.width  = newW + "px";
+        box.style.width = newW + "px";
         box.style.height = newH + "px";
         const pdf = this._screenToPdf(origLeft, origTop, newW, newH);
         Object.assign(this._sigBox, { x: pdf.lLx, y: pdf.lLy, w: pdf.w, h: pdf.h });
@@ -923,27 +1023,39 @@ export class Step1Upload {
     const onEnd = () => {
       mode = null;
       document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup",   onEnd);
+      document.removeEventListener("mouseup", onEnd);
       document.removeEventListener("touchmove", onMove);
-      document.removeEventListener("touchend",  onEnd);
+      document.removeEventListener("touchend", onEnd);
     };
 
-    box.addEventListener("mousedown",  (e) => onStart(e, "move"));
+    box.addEventListener("mousedown", (e) => onStart(e, "move"));
     box.addEventListener("touchstart", (e) => onStart(e, "move"), { passive: false });
-    resize.addEventListener("mousedown",  (e) => onStart(e, "resize"));
+    resize.addEventListener("mousedown", (e) => onStart(e, "resize"));
     resize.addEventListener("touchstart", (e) => onStart(e, "resize"), { passive: false });
   }
 
   /** Ẩn/hiện canvas chữ ký tay theo template */
   _onTemplateChange() {
     const template = this._el?.querySelector("#sp-template")?.value;
-    const section  = this._el?.querySelector("#sp-handsig-section");
+    const section = this._el?.querySelector("#sp-handsig-section");
     if (!section) return;
-    const show = template === "right" || template === "left";
+    const show = template === "right" || template === "left" || template === "center";
     section.style.opacity = show ? "1" : "0.35";
     section.style.pointerEvents = show ? "" : "none";
     const canvas = this._el?.querySelector("#sp-sig-canvas");
     if (canvas) canvas.style.cursor = show ? "crosshair" : "not-allowed";
+
+    // Đồng bộ dropdown vị trí và index
+    const posSel = this._el?.querySelector("#sp-handsig-pos");
+    const idxSel = this._el?.querySelector("#sp-handsig-index");
+    if (template === "center") {
+      if (posSel) posSel.value = "center";
+      if (idxSel) idxSel.value = "top";
+    } else if (template === "right") {
+      if (posSel && posSel.value === "center") posSel.value = "right";
+    } else if (template === "left") {
+      if (posSel && posSel.value === "center") posSel.value = "left";
+    }
   }
 
   /** Khởi tạo canvas vẽ chữ ký tay */
@@ -952,9 +1064,9 @@ export class Step1Upload {
    * thêm padding nhỏ rồi export PNG base64 \u0111\u00e3 crop.
    */
   _cropCanvas(canvas, padding = 8) {
-    const ctx  = canvas.getContext("2d");
-    const w    = canvas.width;
-    const h    = canvas.height;
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
     const data = ctx.getImageData(0, 0, w, h).data;
 
     let minX = w, minY = h, maxX = 0, maxY = 0;
@@ -962,10 +1074,10 @@ export class Step1Upload {
 
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        const idx   = (y * w + x) * 4;
+        const idx = (y * w + x) * 4;
         const alpha = data[idx + 3];
         // Coi là pixel \u0111\u01b0\u1ee3c vẽ nếu không trong suốt VÀ không phải trắng thuần
-        const isWhite = data[idx] > 240 && data[idx+1] > 240 && data[idx+2] > 240;
+        const isWhite = data[idx] > 240 && data[idx + 1] > 240 && data[idx + 2] > 240;
         if (alpha > 10 && !isWhite) {
           if (x < minX) minX = x;
           if (x > maxX) maxX = x;
@@ -980,17 +1092,17 @@ export class Step1Upload {
     if (!hasPixel) return "";
 
     // Áp padding, clamp vào canvas
-    minX = Math.max(0,   minX - padding);
-    minY = Math.max(0,   minY - padding);
-    maxX = Math.min(w-1, maxX + padding);
-    maxY = Math.min(h-1, maxY + padding);
+    minX = Math.max(0, minX - padding);
+    minY = Math.max(0, minY - padding);
+    maxX = Math.min(w - 1, maxX + padding);
+    maxY = Math.min(h - 1, maxY + padding);
 
     const cropW = maxX - minX + 1;
     const cropH = maxY - minY + 1;
 
-    const tmp    = document.createElement("canvas");
-    tmp.width    = cropW;
-    tmp.height   = cropH;
+    const tmp = document.createElement("canvas");
+    tmp.width = cropW;
+    tmp.height = cropH;
     const tmpCtx = tmp.getContext("2d");
     // Nền trắng
     // Nền trong suốt — không fillRect trắng
@@ -1005,13 +1117,13 @@ export class Step1Upload {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = "#0040ff";
-    ctx.lineWidth   = 2.5;
-    ctx.lineCap     = "round";
-    ctx.lineJoin    = "round";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
     const getPos = (e) => {
       const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width  / rect.width;
+      const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1049,14 +1161,43 @@ export class Step1Upload {
     };
 
     // Mouse
-    canvas.addEventListener("mousedown",  startDraw);
-    canvas.addEventListener("mousemove",  draw);
-    canvas.addEventListener("mouseup",    endDraw);
+    canvas.addEventListener("mousedown", startDraw);
+    canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseup", endDraw);
     canvas.addEventListener("mouseleave", endDraw);
     // Touch
     canvas.addEventListener("touchstart", startDraw, { passive: false });
-    canvas.addEventListener("touchmove",  draw,      { passive: false });
-    canvas.addEventListener("touchend",   endDraw,   { passive: false });
+    canvas.addEventListener("touchmove", draw, { passive: false });
+    canvas.addEventListener("touchend", endDraw, { passive: false });
+
+    // Nút vẽ chữ ký mẫu
+    this._el?.querySelector("#sp-sig-sample")?.addEventListener("click", () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.strokeStyle = "#0040ff";
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      // Vẽ đường uốn lượn chữ ký đẹp
+      ctx.moveTo(30, 160);
+      ctx.quadraticCurveTo(80, 60, 120, 180);
+      ctx.quadraticCurveTo(150, 240, 180, 120);
+      ctx.bezierCurveTo(200, 80, 230, 220, 260, 140);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(60, 190);
+      ctx.lineTo(245, 180);
+      ctx.stroke();
+
+      this._handSigBase64 = this._cropCanvas(canvas);
+      const status = this._el?.querySelector("#sp-sig-status");
+      if (status) {
+        status.textContent = "✅ Đã tạo chữ ký mẫu";
+        status.style.color = "var(--color-success)";
+      }
+      this._updateRequestPanel();
+      this._renderSigPreview();
+    });
 
     // Nút xóa
     this._el?.querySelector("#sp-sig-clear")?.addEventListener("click", () => {
@@ -1074,18 +1215,18 @@ export class Step1Upload {
 
   /** Hiển thị các form fields sẽ được gửi (dưới dạng JSON tương đương để dễ đọc) */
   _updateRequestPanel() {
-    const idNumber  = this._el?.querySelector("#s1-cccd")?.value || "...";
+    const idNumber = this._el?.querySelector("#s1-cccd")?.value || "...";
     const signProps = this._getSignProps();
     const fileNames = this._files.length
       ? this._files.map(f => f.name)
       : ["<chọn file PDF>"];
     this._codePanels.setRequest({
-      "// Content-Type":  "multipart/form-data",
-      "// Header":        "x-api-key + code (Partner Code)",
-      "documents":        fileNames.length === 1 ? fileNames[0] : fileNames,
-      "id_number":        idNumber,
-      "sign_props":       signProps,
-      "security_level":   "LEVEL_2",
+      "// Content-Type": "multipart/form-data",
+      "// Header": "x-api-key + code (Partner Code)",
+      "documents": fileNames.length === 1 ? fileNames[0] : fileNames,
+      "id_number": idNumber,
+      "sign_props": signProps,
+      "security_level": "LEVEL_2",
     });
   }
 
@@ -1102,6 +1243,108 @@ export class Step1Upload {
   }
 
   /** Thực thi STEP 1 */
+  /** Tìm vị trí từ khóa trong file PDF và di chuyển ô chữ ký đến ngay bên dưới */
+  async _searchKeywordAndPosition() {
+    const kwInput = this._el?.querySelector("#sp-search-keyword");
+    const statusEl = this._el?.querySelector("#sp-search-status");
+    const keyword = kwInput?.value.trim();
+
+    if (!keyword) {
+      if (statusEl) {
+        statusEl.textContent = "⚠️ Vui lòng nhập từ khóa cần tìm (vd: Người ký, Bên A, Ký bởi...)";
+        statusEl.style.color = "var(--color-warning, #f59e0b)";
+      }
+      return;
+    }
+    if (!this._pdfDoc) {
+      if (statusEl) {
+        statusEl.textContent = "⚠️ Vui lòng chọn file PDF để quét vị trí từ khóa";
+        statusEl.style.color = "var(--color-warning, #f59e0b)";
+      }
+      return;
+    }
+
+    if (statusEl) {
+      statusEl.textContent = `🔍 Đang quét tài liệu tìm cụm từ "${keyword}"...`;
+      statusEl.style.color = "var(--text-muted)";
+    }
+
+    const kwLower = keyword.toLowerCase();
+    let found = false;
+
+    for (let pageNum = 1; pageNum <= this._totalPages; pageNum++) {
+      const page = await this._pdfDoc.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const items = textContent.items || [];
+
+      // Nhóm items theo từng dòng (Y xấp xỉ trong 4pt)
+      const lines = [];
+      for (const item of items) {
+        if (!item.str || !item.transform) continue;
+        const tx = item.transform[4];
+        const ty = item.transform[5];
+        const existingLine = lines.find(l => Math.abs(l.y - ty) < 4);
+        if (existingLine) {
+          existingLine.items.push({ str: item.str, x: tx, width: item.width || 0 });
+        } else {
+          lines.push({ y: ty, items: [{ str: item.str, x: tx, width: item.width || 0 }] });
+        }
+      }
+
+      for (const line of lines) {
+        line.items.sort((a, b) => a.x - b.x);
+        const fullLineStr = line.items.map(i => i.str).join("");
+        const idx = fullLineStr.toLowerCase().indexOf(kwLower);
+
+        if (idx !== -1) {
+          let charCount = 0;
+          let matchX = line.items[0].x;
+          for (const item of line.items) {
+            if (charCount + item.str.length > idx) {
+              matchX = item.x;
+              break;
+            }
+            charCount += item.str.length;
+          }
+
+          const matchY = line.y;
+          const sigW = this._sigBox.w || 260;
+          const sigH = this._sigBox.h || 90;
+
+          // Tọa độ mới: X nằm theo từ khóa, Y nằm ngay bên dưới từ khóa (Y trong PDF tính từ đáy lên)
+          const newX = Math.max(10, Math.round(matchX));
+          const newY = Math.max(10, Math.round(matchY - sigH - 10));
+
+          this._sigBox.x = newX;
+          this._sigBox.y = newY;
+          this._sigBox.page = pageNum;
+
+          this._currentPage = pageNum;
+          await this._renderPage(pageNum);
+          this._updatePageNav();
+
+          const pageInp = this._el.querySelector("#sp-page");
+          if (pageInp) pageInp.value = pageNum;
+
+          this._syncBoxToInputs();
+
+          if (statusEl) {
+            statusEl.textContent = `🎯 Đã tìm thấy "${keyword}" tại Trang ${pageNum} (X:${newX}, Y:${newY}). Đã di chuyển ô chữ ký xuống ngay bên dưới!`;
+            statusEl.style.color = "var(--color-success, #10b981)";
+          }
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+
+    if (!found && statusEl) {
+      statusEl.textContent = `❌ Không tìm thấy từ khóa "${keyword}" trong ${this._totalPages} trang PDF`;
+      statusEl.style.color = "var(--color-danger, #ef4444)";
+    }
+  }
+
   async _run() {
     const idNumber = this._el.querySelector("#s1-cccd").value.trim();
     if (!idNumber || idNumber.length !== 12) {
@@ -1115,7 +1358,7 @@ export class Step1Upload {
 
     this._state.idNumber = idNumber;
 
-    const btn   = this._el.querySelector("#s1-btn-upload");
+    const btn = this._el.querySelector("#s1-btn-upload");
     const badge = this._el.querySelector("#s1-badge");
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner"></span> Đang upload...`;
@@ -1134,17 +1377,17 @@ export class Step1Upload {
       ];
       // Gửi nhiều file — API nhận documents[] dạng multiple
       filesToUpload.forEach(f => formData.append("documents", f));
-      formData.append("id_number",     idNumber);
-      formData.append("sign_props",    JSON.stringify(this._getSignProps()));
-      formData.append("security_level","LEVEL_2");
+      formData.append("id_number", idNumber);
+      formData.append("sign_props", JSON.stringify(this._getSignProps()));
+      formData.append("security_level", "LEVEL_2");
 
       const data = await signGetChallenge(formData);
       // data = { transaction_code, token_sign, docs[{doc_id, doc_name, doc_challenge}] }
 
       // Lưu vào state
       this._state.transactionCode = data.transaction_code;
-      this._state.tokenSign       = data.token_sign;
-      this._state.docs            = data.docs;
+      this._state.tokenSign = data.token_sign;
+      this._state.docs = data.docs;
 
       this._codePanels.setResponse({ success: true, error: null, data }, "success");
 

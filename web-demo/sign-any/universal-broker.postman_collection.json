@@ -1,0 +1,395 @@
+{
+  "info": {
+    "_postman_id": "vneca-universal-broker",
+    "name": "VNeCA — Universal Broker (provider = \"ANY\")",
+    "description": "Luồng Signing Flow 'Universal Broker': flow có provider = \"ANY\" nên nền tảng KHÔNG chốt CA ở bước tạo giao dịch mà trả client_instruction.type = REDIRECT_BROKER + url trỏ trang /broker của enduser-portal; CA được giải ở thời điểm ký.\n\nHai đường chọn CA:\n  A) Người dùng cuối trên trang /broker (BFF của enduser-portal -> /v1/broker/sessions ...) — nhóm 2.\n  B) Client S2S (local agent/quầy) tự chọn phương thức + CA qua đường tích hợp — nhóm 3.\n\nThứ tự: 0. Auth -> 1. Tạo giao dịch ANY -> 2 (hoặc 3) chọn CA -> 1.2/3.2 poll tới COMPLETED.\n\nContract nguồn: docs/04-integration/README.md §1 (auth), §3 (endpoint), §3.1 (broker link-in), §6 (idempotency).\nHướng dẫn sử dụng đầy đủ (tiếng Việt): docs/guide-book/universal-broker-usage-guide.md",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{access_token}}", "type": "string" }
+    ]
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const ct = pm.response.headers.get('Content-Type') || '';",
+          "if (!ct.includes('json')) return;",
+          "let body; try { body = pm.response.json(); } catch (_) { body = null; }",
+          "if (!body) return;",
+          "const data = body.data || body;",
+          "if (data.access_token) pm.collectionVariables.set('access_token', data.access_token);",
+          "if (data.transaction_id) pm.collectionVariables.set('transaction_id', data.transaction_id);",
+          "else if (data.execution_id && String(data.execution_id).startsWith('ist_')) pm.collectionVariables.set('transaction_id', data.execution_id);",
+          "if (data.status) pm.collectionVariables.set('last_status', data.status);",
+          "if (data.runtime_status) pm.collectionVariables.set('last_status', data.runtime_status);",
+          "if (data.transaction_status) pm.collectionVariables.set('last_transaction_status', data.transaction_status);",
+          "const instr = data.client_instruction || {};",
+          "const steps = Array.isArray(data.steps) ? data.steps : [];",
+          "const waiting = steps.find(s => s.status === 'WAITING_CLIENT') || steps[0] || {};",
+          "const stepId = instr.step_execution_id || waiting.step_execution_id;",
+          "const resumeToken = instr.resume_token || (waiting.client_output && waiting.client_output.resume_token);",
+          "const brokerUrl = instr.url || (waiting.client_output && waiting.client_output.broker_url);",
+          "if (stepId) pm.collectionVariables.set('step_execution_id', stepId);",
+          "if (resumeToken) pm.collectionVariables.set('broker_resume_token', resumeToken);",
+          "if (brokerUrl) {",
+          "  pm.collectionVariables.set('broker_url', brokerUrl);",
+          "  try {",
+          "    const challenge = new URL(brokerUrl).searchParams.get('resume_token');",
+          "    if (challenge) pm.collectionVariables.set('broker_challenge', challenge);",
+          "  } catch (_) { }",
+          "}",
+          "if (data.session_id) pm.collectionVariables.set('session_id', data.session_id);",
+          "if (data.session_token) pm.collectionVariables.set('session_token', data.session_token);",
+          "if (Array.isArray(data.providers)) {",
+          "  pm.collectionVariables.set('providers_json', JSON.stringify(data.providers, null, 2));",
+          "  console.log('[broker] ' + data.providers.length + ' CA kha dung:', data.providers);",
+          "  if (data.providers.length === 0) {",
+          "    console.warn('[broker] data.providers RONG: tenant chua gan CA cho phuong thuc/channel/environment nay, hoac provider-service khong doc duoc (xem log BROKER_PROVIDER_OPTIONS_EMPTY / _UNREACHABLE).');",
+          "  }",
+          "}",
+          "if (data.client_instruction && data.client_instruction.url) pm.collectionVariables.set('next_url', data.client_instruction.url);",
+          "if (body.broker_session) pm.collectionVariables.set('broker_replayed', String(body.broker_session.replayed === true));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "platform_url", "value": "https://api.vneca.vn", "type": "string", "description": "API Gateway (Kong). Local: http://localhost:8009" },
+    { "key": "tenant_id", "value": "", "type": "string" },
+    { "key": "client_id", "value": "", "type": "string", "description": "OAuth2 client_id của credential tích hợp (không commit secret thật)" },
+    { "key": "client_secret", "value": "", "type": "string", "description": "Chỉ đặt ở Postman environment local" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "integration_key", "value": "", "type": "string", "description": "integration_key của flow provider = ANY đã publish" },
+    { "key": "business_category", "value": "medical_record", "type": "string", "description": "Flow ANY bắt buộc khai; bản sao để đối chiếu profile" },
+    { "key": "user_id", "value": "", "type": "string", "description": "Định danh người ký (CCCD)" },
+    { "key": "document_name", "value": "benh-an.pdf", "type": "string" },
+    { "key": "document_hash_base64", "value": "", "type": "string", "description": "SHA-256 Base64 (canonical OD-1)" },
+    { "key": "idempotency_key", "value": "", "type": "string", "description": "TÊN của ý định ký, không phải số ngẫu nhiên" },
+    { "key": "transaction_id", "value": "", "type": "string" },
+    { "key": "broker_url", "value": "", "type": "string", "description": "client_instruction.url — mở cho người ký (hoặc sinh QR)" },
+    { "key": "broker_challenge", "value": "", "type": "string", "description": "resume_token trong broker_url (broker_redirect, trình lại được)" },
+    { "key": "broker_resume_token", "value": "", "type": "string", "description": "resume_token dùng MỘT LẦN cho đường S2S (broker_resume)" },
+    { "key": "step_execution_id", "value": "broker_selection", "type": "string" },
+    { "key": "device_fingerprint", "value": "postman-device-a", "type": "string", "description": "Digest thiết bị. Đổi giá trị = đổi thiết bị (test 409 BROKER_SESSION_ALREADY_ISSUED)" },
+    { "key": "session_id", "value": "", "type": "string" },
+    { "key": "session_token", "value": "", "type": "string", "description": "HS256, scope broker:sign — Bearer cho 2.2/2.3" },
+    { "key": "providers_json", "value": "[]", "type": "string", "description": "data.providers của 2.1 — danh sách CA người ký được chọn" },
+    { "key": "method_code", "value": "", "type": "string", "description": "Lấy từ providers_json (một entry = CA × method)" },
+    { "key": "provider_id", "value": "", "type": "string", "description": "CA người ký chọn; bỏ trống = không nêu ý định CA" },
+    { "key": "environment", "value": "production", "type": "string", "description": "sandbox|production — PHẢI khớp môi trường của assignment/binding" },
+    { "key": "channel", "value": "web", "type": "string" },
+    { "key": "flow_code", "value": "default", "type": "string" },
+    { "key": "next_url", "value": "", "type": "string", "description": "URL trang nhà cung cấp sau khi chọn CA" },
+    { "key": "broker_replayed", "value": "", "type": "string" },
+    { "key": "last_status", "value": "", "type": "string", "description": "runtime_status (alias cũ: status)" },
+    { "key": "last_transaction_status", "value": "", "type": "string", "description": "Vòng đời giao dịch" }
+  ],
+  "item": [
+    {
+      "name": "0. Auth (OAuth2 client_credentials)",
+      "item": [
+        {
+          "name": "0.1. Lấy access_token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Cấp token thành công', () => pm.response.to.be.success);",
+                  "pm.test('Có access_token', () => pm.expect(pm.collectionVariables.get('access_token')).to.not.be.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grant_type\": \"client_credentials\",\n  \"client_id\": \"{{client_id}}\",\n  \"client_secret\": \"{{client_secret}}\",\n  \"scope\": \"signing:create signing:read signing:resume\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{platform_url}}/v1/auth/oauth/token",
+              "host": [ "{{platform_url}}" ],
+              "path": [ "v1", "auth", "oauth", "token" ]
+            },
+            "description": "Trả access_token; mọi request /v1/integration/** dùng Bearer (collection auth). Scope thiếu ⇒ 403 INSUFFICIENT_SCOPE; secret sai ⇒ 401 INVALID_CLIENT; credential bị khoá ⇒ 429 CREDENTIAL_LOCKED."
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Khởi tạo giao dịch Universal Broker (provider = ANY)",
+      "item": [
+        {
+          "name": "1.1. Tạo giao dịch — KHÔNG kèm method_code",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('idempotency_key')) {",
+                  "  pm.collectionVariables.set('idempotency_key', 'broker_' + pm.variables.replaceIn('{{$guid}}'));",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Tạo giao dịch thành công', () => pm.response.to.be.success);",
+                  "const body = pm.response.json();",
+                  "const instr = body && body.data ? (body.data.client_instruction || {}) : {};",
+                  "pm.test('Trả chỉ dẫn REDIRECT_BROKER', () => pm.expect(instr.type).to.eql('REDIRECT_BROKER'));",
+                  "pm.test('Có URL trang /broker', () => pm.expect(instr.url).to.be.a('string').and.to.include('/broker?'));",
+                  "pm.test('Có resume token dùng một lần cho S2S', () => pm.expect(instr.resume_token).to.be.a('string').and.to.not.be.empty);",
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('[request body] integration_key/business_category/idempotency_key:',",
+                  "    pm.collectionVariables.get('integration_key'),",
+                  "    pm.collectionVariables.get('business_category'),",
+                  "    pm.collectionVariables.get('idempotency_key'));",
+                  "  console.error('[goi y] 400 BUSINESS_CATEGORY_REQUIRED = flow ANY chua khai business_category; 400 INVALID_BUSINESS_CATEGORY = ma ngoai taxonomy; 400 IDEMPOTENCY_KEY_REQUIRED = thieu ca body lan header.', pm.response.json());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenant_id}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenant_id}}\",\n  \"integration_key\": \"{{integration_key}}\",\n  \"business_category\": \"{{business_category}}\",\n  \"idempotency_key\": \"{{idempotency_key}}\",\n  \"reference_id\": \"{{idempotency_key}}\",\n  \"identity\": {\n    \"user_id\": \"{{user_id}}\",\n    \"id_number\": \"{{user_id}}\"\n  },\n  \"signing\": {\n    \"document_name\": \"{{document_name}}\",\n    \"document_hash\": \"{{document_hash_base64}}\",\n    \"hash_algorithm\": \"SHA-256\",\n    \"file_type\": \"pdf\",\n    \"sign_files\": [\n      {\n        \"doc_id\": \"{{idempotency_key}}\",\n        \"filename\": \"{{document_name}}\",\n        \"doc_name\": \"{{document_name}}\",\n        \"file_type\": \"pdf\",\n        \"content_type\": \"application/pdf\",\n        \"sign_type\": \"hash\",\n        \"hash_key\": \"{{document_name}}\",\n        \"hash_value\": \"{{document_hash_base64}}\",\n        \"data_to_be_signed\": \"{{document_hash_base64}}\"\n      }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{platform_url}}/v1/integration/signing-transactions",
+              "host": [ "{{platform_url}}" ],
+              "path": [ "v1", "integration", "signing-transactions" ]
+            },
+            "description": "ĐIỂM KHÁC BIỆT DUY NHẤT của luồng ANY: KHÔNG gửi method_code/signing_method. Nền tảng không chạy provider execution nào mà trả client_instruction.type = REDIRECT_BROKER + url trang /broker (mang challenge broker_redirect) và steps[0].step_name = UNIVERSAL_BROKER. business_category: xoá dòng này nếu không muốn khẳng định nhãn — nếu gửi thì phải KHỚP flow đã publish (lệch ⇒ 400 BUSINESS_CATEGORY_MISMATCH; flow không khai ⇒ 400 BUSINESS_CATEGORY_NOT_DECLARED). idempotency_key là TÊN của ý định ký: gửi lại cùng khoá ⇒ nhận lại đúng giao dịch đó; cùng khoá khác digest ⇒ 409 DOCUMENT_HASH_MISMATCH."
+          }
+        },
+        {
+          "name": "1.2. Đọc trạng thái (poll) — luôn có lại chỉ dẫn broker",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "X-Tenant-Id", "value": "{{tenant_id}}" } ],
+            "url": {
+              "raw": "{{platform_url}}/v1/integration/signing-transactions/{{transaction_id}}",
+              "host": [ "{{platform_url}}" ],
+              "path": [ "v1", "integration", "signing-transactions", "{{transaction_id}}" ]
+            },
+            "description": "Với giao dịch ANY chưa có phiên chạy provider, GET trả lại đúng hình dạng bước broker (REDIRECT_BROKER + resume_token MỚI). Đọc cùng nhau: runtime_status (phiên chạy provider) và transaction_status (vòng đời giao dịch — OD-2). Trạng thái 'đang ở bước broker' = transaction_status CLIENT_ACTION_REQUIRED + chưa có phương thức; ĐỪNG suy từ hình dạng id."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Người dùng cuối — phiên broker (/broker qua BFF)",
+      "item": [
+        {
+          "name": "2.1. Đổi challenge lấy phiên broker (ẩn danh)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "['transaction_id','broker_challenge','device_fingerprint'].forEach(k =>",
+                  "  pm.test('Có ' + k, () => pm.expect(pm.collectionVariables.get(k)).to.not.be.empty));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Mở phiên thành công', () => pm.response.to.be.success);",
+                  "const data = pm.response.json().data || {};",
+                  "pm.test('Là BROKER_SESSION_ISSUED', () => pm.expect(data.status).to.eql('BROKER_SESSION_ISSUED'));",
+                  "pm.test('Có session_token', () => pm.expect(data.session_token).to.be.a('string').and.to.not.be.empty);",
+                  "const providers = Array.isArray(data.providers) ? data.providers : [];",
+                  "pm.test('Danh sách CA đọc được (có thể rỗng nếu tenant chưa gán)', () => pm.expect(providers).to.be.an('array'));",
+                  "if (providers.length > 0) {",
+                  "  const first = providers[0];",
+                  "  pm.collectionVariables.set('method_code', first.method_code);",
+                  "  pm.collectionVariables.set('provider_id', first.provider_id);",
+                  "  if (first.environment) pm.collectionVariables.set('environment', first.environment);",
+                  "  if (first.channel) pm.collectionVariables.set('channel', first.channel);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenant_id}}\",\n  \"transaction_id\": \"{{transaction_id}}\",\n  \"resume_token\": \"{{broker_challenge}}\",\n  \"device_fingerprint\": \"{{device_fingerprint}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{platform_url}}/v1/broker/sessions",
+              "host": [ "{{platform_url}}" ],
+              "path": [ "v1", "broker", "sessions" ]
+            },
+            "description": "Ẩn danh vì người ký chưa có tài khoản nền tảng: chính challenge (broker_redirect trong broker_url) + giao dịch đang chờ + luật 'một phiên sống cho mỗi giao dịch' là thứ được kiểm. Lỗi: 404 RESUME_TOKEN_NOT_FOUND (challenge không khớp tenant/giao dịch/bước), 409 BROKER_NOT_WAITING (giao dịch không ở CLIENT_ACTION_REQUIRED), 409 BROKER_SESSION_ALREADY_ISSUED (link đã mở ở thiết bị khác). Trang thật của enduser-portal đi qua BFF /api/broker/session và giữ session_token trong cookie HttpOnly — ở Postman ta cầm token trực tiếp để chạy tiếp 2.2/2.3."
+          }
+        },
+        {
+          "name": "2.2. Chọn CA (Bearer session token)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "['session_id','session_token','method_code'].forEach(k =>",
+                  "  pm.test('Có ' + k, () => pm.expect(pm.collectionVariables.get(k)).to.not.be.empty));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Chọn CA được chấp nhận', () => pm.response.to.be.success);",
+                  "const body = pm.response.json();",
+                  "pm.test('Có next_url của nhà cung cấp', () => pm.expect((((body.data||{}).client_instruction)||{}).url).to.be.a('string').and.to.not.be.empty);",
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('[goi y] 403 PROVIDER_NOT_ASSIGNED = CA khong thuoc assignment; 422 NO_PROVIDER_AVAILABLE = CA/connector khong chay duoc (thuong do LECH MOI TRUONG); 403 POLICY_DENIED = policy engine chan; 400 ENVIRONMENT_REQUIRED = khong co nguon noi moi truong; 400 INVALID_BROKER_SELECTION = thieu method_code; 409 BROKER_SESSION_ALREADY_USED = da chon CA khac truoc do.', pm.response.json());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"client_result\": {\n    \"method_code\": \"{{method_code}}\",\n    \"provider_id\": \"{{provider_id}}\",\n    \"flow_code\": \"{{flow_code}}\",\n    \"channel\": \"{{channel}}\",\n    \"environment\": \"{{environment}}\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{platform_url}}/v1/broker/sessions/{{session_id}}:resume",
+              "host": [ "{{platform_url}}" ],
+              "path": [ "v1", "broker", "sessions", "{{session_id}}:resume" ]
+            },
+            "description": "Thẩm quyền là SESSION TOKEN (Bearer), không cần resume token; body KHÔNG có tham số giao dịch — tenant/giao dịch/context lấy từ phiên. provider_id bỏ trống = không nêu ý định CA (định tuyến theo thứ tự ưu tiên). Chọn lại CÙNG CA ⇒ 200 idempotent + broker_session.replayed = true; chọn CA KHÁC sau khi đã chọn ⇒ 409 BROKER_SESSION_ALREADY_USED; hết hạn/thu hồi/sai thiết bị ⇒ 401."
+          }
+        },
+        {
+          "name": "2.3. Huỷ phiên (tuỳ chọn — người dùng rời trang)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{platform_url}}/v1/broker/sessions/{{session_id}}:revoke",
+              "host": [ "{{platform_url}}" ],
+              "path": [ "v1", "broker", "sessions", "{{session_id}}:revoke" ]
+            },
+            "description": "Trả BROKER_SESSION_REVOKED. Phiên đã revoke thì mọi lần :resume sau đó trả 401 và KHÔNG chạm tới signing runtime. BFF của enduser-portal dùng chính endpoint này khi người dùng rời trang mà chưa chọn CA."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Đường S2S — tự chọn phương thức + CA",
+      "item": [
+        {
+          "name": "3.1. Resume bước broker_selection (token dùng MỘT LẦN)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "['transaction_id','broker_resume_token','method_code'].forEach(k =>",
+                  "  pm.test('Có ' + k, () => pm.expect(pm.collectionVariables.get(k)).to.not.be.empty));",
+                  "pm.test('Đúng tên bước broker', () => pm.expect(pm.collectionVariables.get('step_execution_id')).to.eql('broker_selection'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Provider execution đã bắt đầu', () => pm.response.to.be.success);",
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('[goi y] 409 CLIENT_STEP_MISMATCH = sai ten buoc; 400 INVALID_BROKER_SELECTION = thieu method_code; 400 ENVIRONMENT_REQUIRED = khong co nguon noi moi truong; 403 PROVIDER_NOT_ASSIGNED / 422 NO_PROVIDER_AVAILABLE = CA nguoi ky chon khong thuoc assignment / khong chay duoc; 403 POLICY_DENIED = policy chan; 409 RESUME_TOKEN_USED = token da bi tieu (chay lai tu 1.1 voi giao dich moi); 410 RESUME_TOKEN_EXPIRED; 401 RESUME_TOKEN_INVALID.', pm.response.json());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenant_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resume_token\": \"{{broker_resume_token}}\",\n  \"client_result\": {\n    \"method_code\": \"{{method_code}}\",\n    \"provider_id\": \"{{provider_id}}\",\n    \"environment\": \"{{environment}}\",\n    \"channel\": \"{{channel}}\",\n    \"flow_code\": \"{{flow_code}}\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{platform_url}}/v1/integration/signing-transactions/{{transaction_id}}/client-steps/{{step_execution_id}}:resume",
+              "host": [ "{{platform_url}}" ],
+              "path": [ "v1", "integration", "signing-transactions", "{{transaction_id}}", "client-steps", "{{step_execution_id}}:resume" ]
+            },
+            "description": "Dành cho client S2S (local agent/quầy) chọn THAY người ký: dùng resume_token thứ hai (client_instruction.resume_token — purpose broker_resume), KHÁC với challenge trong broker_url. Token chỉ dùng được MỘT lần: gửi lần hai ⇒ 409 RESUME_TOKEN_USED. Mất response thì đọc lại 1.2 (GET) thay vì gửi lại token cũ. Lưu ý phát hành: chưa client nào trong sdk/** gửi provider_id hôm nay — xem docs/guide-book/universal-broker-usage-guide.md §8."
+          }
+        },
+        {
+          "name": "3.2. Poll trạng thái cuối",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "X-Tenant-Id", "value": "{{tenant_id}}" } ],
+            "url": {
+              "raw": "{{platform_url}}/v1/integration/signing-transactions/{{transaction_id}}",
+              "host": [ "{{platform_url}}" ],
+              "path": [ "v1", "integration", "signing-transactions", "{{transaction_id}}" ]
+            },
+            "description": "Gửi lặp tới runtime_status = COMPLETED/FAILED. Sau khi chọn CA, runtime_status chuyển sang RUNNING (hoặc WAITING_CLIENT nếu provider cần thêm hành động của người ký, ví dụ xác nhận trên app CA) và transaction_status chuyển sang METHOD_SELECTED — đó là dấu hiệu đã thoát khỏi bước broker."
+          }
+        }
+      ]
+    }
+  ]
+}
