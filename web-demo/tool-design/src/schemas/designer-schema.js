@@ -72,6 +72,7 @@ export const imageAnalysisSchema = z
     averageColor: hexColor.nullable(),
     redRatio: unit,
     blueRatio: unit,
+    contentBox: z.object({ x: unit, y: unit, width: unit, height: unit }).nullable(),
   })
   .partial()
   .nullable();
