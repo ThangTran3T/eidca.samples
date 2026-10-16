@@ -1,0 +1,362 @@
+/**
+ * Step2Signature.js — STEP 2: Gửi Signature + NFC data + Selfie (Cá nhân thuộc Tổ chức)
+ *
+ * Gọi API: POST /ca/api/eid-company/signature
+ *
+ * Khác với cá nhân thông thường:
+ *   - KHÔNG gửi info.ip_address, machine_name, machine_type, OS, version, serial_device, city, district
+ *   - Chỉ cần: phone, email, image (selfie)
+ *
+ * Dữ liệu cần có:
+ *   - state.transactionCode  — từ STEP 1
+ *   - state.tokenChallenge   — từ STEP 1
+ *   - state.rawData          — { sod, dg1, dg2, dg13, dg15 } từ NFC (id:4)
+ *   - state.signature        — aa_signature từ chip thẻ (id:7)
+ *   - state.selfieBase64     — Ảnh selfie từ webcam
+ *
+ * Output lưu vào state:
+ *   - token_signature   (dùng cho STEP 3)
+ *   - interval          (ms, dùng để poll STEP 3)
+ */
+
+import { renderCodePanels } from "../../ui/CodePanel.js";
+import { companySendSignature } from "../../api/eidcaClient.js";
+
+export class Step2Signature {
+  constructor(container, { state, socket, onDone }) {
+    this._container = container;
+    this._state = state;
+    this._socket = socket;
+    this._onDone = onDone;
+    this._el = null;
+    this._codePanels = null;
+    this._aaWaiting = false;
+  }
+
+  mount() {
+    this._el = document.createElement("div");
+    this._el.className = "step-card disabled";
+    this._el.id = "step-2-card";
+    this._el.innerHTML = `
+      <div class="step-card-header">
+        <div class="step-num">2</div>
+        <div class="step-card-title">
+          <h3>Xác thực NFC + Selfie</h3>
+          <p>POST /ca/api/eid-company/signature — Gửi dữ liệu thẻ, ảnh và chữ ký</p>
+        </div>
+        <span class="step-status-badge badge-waiting" id="s2-badge">Đang chờ</span>
+      </div>
+
+      <div class="step-card-body">
+        <!-- Thẻ nhắc nhở khác biệt so với cá nhân -->
+        <div class="notice info" id="s2-notice">
+          ⏳ Đang chờ hoàn thành STEP 1...
+        </div>
+        <div class="notice" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);color:var(--text-secondary);display:none;" id="s2-diff-notice">
+          🏢 Luồng <strong>Tổ chức</strong>: payload gọn hơn cá nhân — không cần gửi thông tin máy tính/thiết bị.
+          Chỉ cần <code>raw_data</code>, <code>info.phone</code>, <code>info.email</code>, <code>info.image</code> và <code>signature</code>.
+        </div>
+
+        <!-- Checklist dữ liệu cần thu thập -->
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+          <div class="device-row" style="background:var(--bg-card-2);border-radius:8px;padding:10px 14px;">
+            <span id="chk-nfc">⬜</span>
+            <div class="device-info">
+              <div class="device-name">Dữ liệu NFC (DG1, DG2, SOD...)</div>
+              <div class="device-sub">Đọc từ đầu đọc thẻ CCCD</div>
+            </div>
+          </div>
+          <div class="device-row" style="background:var(--bg-card-2);border-radius:8px;padding:10px 14px;">
+            <span id="chk-aa">⬜</span>
+            <div class="device-info">
+              <div class="device-name">Chữ ký AA (Active Authentication)</div>
+              <div class="device-sub">Ký challenge trên chip thẻ</div>
+            </div>
+          </div>
+          <div class="device-row" style="background:var(--bg-card-2);border-radius:8px;padding:10px 14px;">
+            <span id="chk-selfie">⬜</span>
+            <div class="device-info">
+              <div class="device-name">Ảnh selfie từ webcam</div>
+              <div class="device-sub">Chụp tự động từ webcam</div>
+            </div>
+          </div>
+
+          <!-- Thông tin liên hệ -->
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <div style="flex:1;">
+              <label style="display:block;font-size:0.8rem;margin-bottom:4px;color:var(--text-secondary);">Email liên hệ</label>
+              <input type="email" id="s2-input-email" placeholder="Nhập email" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-card-2);color:var(--text-primary);">
+            </div>
+            <div style="flex:1;">
+              <label style="display:block;font-size:0.8rem;margin-bottom:4px;color:var(--text-secondary);">Số điện thoại</label>
+              <input type="tel" id="s2-input-phone" placeholder="Nhập SĐT" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-card-2);color:var(--text-primary);">
+            </div>
+          </div>
+        </div>
+
+        <!-- Nút thủ công -->
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <button class="btn btn-secondary btn-sm" id="s2-btn-aa" disabled>
+            🔑 Ký AA thủ công
+          </button>
+          <button class="btn btn-secondary btn-sm" id="s2-btn-selfie" disabled>
+            📷 Chụp Selfie
+          </button>
+          <button class="btn btn-primary" id="s2-btn-send" disabled>
+            Gửi Xác thực
+          </button>
+        </div>
+
+        <!-- Code Panels: Request | Response -->
+        <div id="s2-code-container"></div>
+      </div>
+    `;
+
+    this._container.appendChild(this._el);
+
+    this._codePanels = renderCodePanels(
+      this._el.querySelector("#s2-code-container"),
+      { requestTitle: "POST /ca/api/eid-company/signature" }
+    );
+
+    // Gắn sự kiện nút
+    this._el.querySelector("#s2-btn-aa").addEventListener("click", () => this._triggerAA());
+    this._el.querySelector("#s2-btn-selfie").addEventListener("click", () => this._captureSelfie());
+    this._el.querySelector("#s2-btn-send").addEventListener("click", () => this._run());
+
+    // Gắn sự kiện input email/phone
+    this._el.querySelector("#s2-input-email").addEventListener("input", (e) => {
+      this._state.email = e.target.value;
+      if (!this._el.querySelector("#s2-btn-send").disabled) this._updateRequestPanel();
+    });
+    this._el.querySelector("#s2-input-phone").addEventListener("input", (e) => {
+      this._state.phone = e.target.value;
+      if (!this._el.querySelector("#s2-btn-send").disabled) this._updateRequestPanel();
+    });
+  }
+
+  /**
+   * Kích hoạt bước này (sau khi STEP 1 hoàn thành).
+   */
+  activate() {
+    this._el.className = "step-card active";
+
+    const notice = this._el.querySelector("#s2-notice");
+    notice.textContent = "✅ STEP 1 hoàn thành. Đang thu thập dữ liệu thiết bị...";
+    notice.className = "notice success";
+
+    // Hiện thẻ nhắc nhở khác biệt
+    this._el.querySelector("#s2-diff-notice").style.display = "";
+
+    // Cập nhật badge
+    const badge = this._el.querySelector("#s2-badge");
+    badge.className = "step-status-badge badge-processing";
+    badge.textContent = "Đang xử lý";
+
+    // Bật nút thủ công
+    this._el.querySelector("#s2-btn-aa").disabled = false;
+    this._el.querySelector("#s2-btn-selfie").disabled = false;
+
+    // Đăng ký nhận AA response từ socket.on
+    this._socket.on.aaResponse = (event) => {
+      if (event.id === 7) {
+        this._state.signature = event.data.aa_signature;
+        this._el.querySelector("#chk-aa").textContent = "✅";
+        this._tryAutoSend();
+      }
+    };
+
+    if (this._state.rawData) {
+      // NFC data đã có (đọc thẻ trước khi vào STEP 2) → tự động ký AA
+      this._el.querySelector("#chk-nfc").textContent = "✅";
+      this._triggerAA();
+    } else {
+      // NFC data chưa có → kích hoạt đọc thẻ
+      // Mock Mode: gọi simulateCardRead() để phát lại chuỗi id:2 → id:4 → id:5
+      // Live Mode: nhắc user đặt thẻ lên đầu đọc
+      if (this._socket.simulateCardRead) {
+        this._socket.simulateCardRead();
+        notice.innerHTML = "⏳ Đang giả lập đọc thẻ CCCD... Dữ liệu NFC sẽ đến sau ~1.5s.";
+      } else {
+        notice.innerHTML = "📱 Đặt thẻ CCCD vào đầu đọc để lấy dữ liệu NFC.";
+      }
+
+      // Thêm nút "Đọc lại thẻ" để người dùng trigger thủ công
+      const rereadBtn = document.createElement("button");
+      rereadBtn.className = "btn btn-ghost btn-sm";
+      rereadBtn.style.marginBottom = "12px";
+      rereadBtn.innerHTML = "🃏 Đọc lại thẻ CCCD";
+      rereadBtn.id = "s2-btn-reread";
+      rereadBtn.addEventListener("click", () => {
+        if (this._state.rawData) {
+          this._el.querySelector("#chk-nfc").textContent = "✅";
+          this._triggerAA();
+        } else if (this._socket.simulateCardRead) {
+          this._socket.simulateCardRead();
+          rereadBtn.disabled = true;
+          rereadBtn.innerHTML = "⏳ Đang đọc...";
+          setTimeout(() => {
+            rereadBtn.disabled = false;
+            rereadBtn.innerHTML = "🃏 Đọc lại thẻ CCCD";
+          }, 2000);
+        }
+      });
+      // Chữn trước nhóm nút action
+      const btnGroup = this._el.querySelector("#s2-btn-aa").closest("div");
+      if (btnGroup?.parentElement) {
+        btnGroup.parentElement.insertBefore(rereadBtn, btnGroup);
+      }
+    }
+
+    // Nếu webcam đang stream → cập nhật selfie
+    if (this._state.selfieBase64) {
+      this._el.querySelector("#chk-selfie").textContent = "✅";
+    }
+  }
+
+  /** Gọi socket để ký challenge bằng chip thẻ (Active Authentication) */
+  _triggerAA() {
+    if (!this._state.tokenChallenge) return;
+    this._aaWaiting = true;
+    // Dùng tokenChallenge làm challenge cho AA (không có trường challenge riêng trong eid-company)
+    this._socket.sendAA(this._state.tokenChallenge);
+  }
+
+  /** Chụp frame ảnh từ webcam */
+  _captureSelfie() {
+    if (this._state.isWebcamPaused) {
+      this._state.resumeWebcam?.();
+      this._state.isWebcamPaused = false;
+      this._state.selfieBase64 = null;
+
+      const btn = this._el.querySelector("#s2-btn-selfie");
+      if (btn) btn.innerHTML = "📷 Chụp Selfie";
+      this._el.querySelector("#chk-selfie").textContent = "⬜";
+      this._el.querySelector("#s2-btn-send").disabled = true;
+    } else {
+      const frame = this._state.getCurrentFrame?.();
+      if (frame) {
+        this.setSelfie(frame);
+      } else {
+        alert("Webcam chưa có ảnh. Vui lòng kiểm tra kết nối webcam.");
+      }
+    }
+  }
+
+  /** Nếu đủ 3 điều kiện → tự động bật nút gửi */
+  _tryAutoSend() {
+    const hasNfc    = !!this._state.rawData;
+    const hasAA     = !!this._state.signature;
+    const hasSelfie = !!this._state.selfieBase64;
+
+    if (hasNfc && hasAA && hasSelfie) {
+      this._el.querySelector("#s2-btn-send").disabled = false;
+      this._updateRequestPanel();
+    }
+  }
+
+  /**
+   * Cập nhật request panel.
+   * Lưu ý: eid-company/signature không cần ip_address, machine_name, OS, v.v.
+   */
+  _updateRequestPanel() {
+    const { transactionCode, tokenChallenge, rawData, selfieBase64, signature, partnerCode } = this._state;
+    this._codePanels.setRequest({
+      code: partnerCode,
+      transaction_code: transactionCode,
+      token_challenge: tokenChallenge,
+      raw_data: {
+        sod:  rawData?.sod  || "...",
+        dg1:  rawData?.dg1  || "...",
+        dg2:  rawData?.dg2  || "...",
+        dg13: rawData?.dg13 || "...",
+        dg15: rawData?.dg15 || "...",
+      },
+      // Payload gọn hơn cá nhân — chỉ cần phone, email, image
+      info: {
+        phone: this._state.phone || "",
+        email: this._state.email || "",
+        image: selfieBase64 || "...",
+      },
+      signature: signature || "...",
+    });
+  }
+
+  /** Thực thi STEP 2 */
+  async _run() {
+    const btn   = this._el.querySelector("#s2-btn-send");
+    const badge = this._el.querySelector("#s2-badge");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Đang gửi...`;
+    badge.className = "step-status-badge badge-processing";
+    badge.textContent = "Đang gửi";
+    this._codePanels.setLoading();
+
+    const { transactionCode, tokenChallenge, rawData, selfieBase64, signature, partnerCode } = this._state;
+
+    try {
+      // ── Gọi API ──────────────────────────────────────────────────────────
+      // companySendSignature() → POST /ca/api/eid-company/signature
+      // Payload gọn hơn — không có device info
+      const data = await companySendSignature({
+        transactionCode,
+        tokenChallenge,
+        rawData: {
+          sod:  rawData.sod,
+          dg1:  rawData.dg1,
+          dg2:  rawData.dg2,
+          dg13: rawData.dg13,
+          dg15: rawData.dg15,
+        },
+        info: {
+          phone: this._state.phone || "",
+          email: this._state.email || "",
+          image: selfieBase64,
+        },
+        signature,
+      });
+      // data = { transaction_code, status, interval, expired_at, token_signature }
+
+      // Lưu vào state để STEP 3 dùng
+      this._state.tokenSignature = data.token_signature;
+      this._state.interval       = parseInt(data.interval) || 3000;
+
+      this._codePanels.setResponse({ success: true, error: null, data }, "success");
+
+      badge.className = "step-status-badge badge-done";
+      badge.textContent = "Hoàn thành";
+      this._el.className = "step-card done";
+      btn.innerHTML = "✓ Đã gửi";
+
+      this._onDone(this._state);
+
+    } catch (err) {
+      this._codePanels.setResponse(
+        { success: false, error: { code: "ERROR", message: err.message }, data: null },
+        "error"
+      );
+      badge.className = "step-status-badge badge-error";
+      badge.textContent = "Lỗi";
+      btn.disabled = false;
+      btn.textContent = "Thử lại";
+    }
+  }
+
+  /** Cập nhật từ DevicePanel khi NFC data ready */
+  setRawData(rawData) {
+    this._state.rawData = rawData;
+    this._el.querySelector("#chk-nfc").textContent = "✅";
+    this._tryAutoSend();
+  }
+
+  /** Cập nhật selfie từ DevicePanel */
+  setSelfie(base64) {
+    this._state.selfieBase64 = base64;
+    this._el.querySelector("#chk-selfie").textContent = "✅";
+    this._state.pauseWebcam?.();
+    this._state.isWebcamPaused = true;
+    const btn = this._el.querySelector("#s2-btn-selfie");
+    if (btn) btn.innerHTML = "🔄 Chụp lại Selfie";
+    this._tryAutoSend();
+  }
+}

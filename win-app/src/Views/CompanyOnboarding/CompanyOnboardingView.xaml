@@ -1,0 +1,25 @@
+<UserControl x:Class="eIDCA.WinApp.Views.CompanyOnboarding.CompanyOnboardingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls"
+             xmlns:views="clr-namespace:eIDCA.WinApp.Views.CompanyOnboarding">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <StackPanel>
+                <TextBlock Text="Đăng ký Chứng thư số Tổ chức" Style="{StaticResource H1}"/>
+                <TextBlock Text="Xác thực danh tính cá nhân và cấp CTS gắn với Tổ chức (eIDCA)." Style="{StaticResource Body}" Margin="0,4,0,0"/>
+            </StackPanel>
+            <controls:StepperControl CurrentStep="{Binding CurrentStep}"
+                                     Step0Label="1. Lấy Challenge" Step1Label="2. Gửi Signature" Step2Label="3. Kiểm tra CTS"/>
+            <Border Style="{StaticResource CardPanel}"><views:Step1ChallengeView DataContext="{Binding Step1}"/></Border>
+            <Border Style="{StaticResource CardPanel}"
+                    Visibility="{Binding CurrentStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=1}">
+                <views:Step2SignatureView DataContext="{Binding Step2}"/>
+            </Border>
+            <Border Style="{StaticResource CardPanel}"
+                    Visibility="{Binding CurrentStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=2}">
+                <views:Step3CheckView DataContext="{Binding Step3}"/>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

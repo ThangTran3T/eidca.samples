@@ -1,0 +1,29 @@
+# EIDCA CMS – Apache security config
+
+RewriteEngine On
+
+# Redirect directly accessed .php files to .html
+RewriteCond %{ENV:REDIRECT_STATUS} ^$
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteCond %{REQUEST_URI} \.php$
+RewriteRule ^(.*)\.php$ $1.html [R=301,L]
+
+# Internally rewrite .html to .php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)\.html$ $1.php [L]
+
+# Bảo vệ config.php không cho truy cập trực tiếp
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Không cho list thư mục
+Options -Indexes
+
+# Bảo vệ thư mục includes
+<FilesMatch "^(db|auth|helpers|layout)\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>

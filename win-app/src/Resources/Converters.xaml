@@ -1,0 +1,16 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cv="clr-namespace:eIDCA.WinApp.Views">
+
+    <!-- ── Value Converters — khai báo 1 lần, dùng toàn app ──────────────── -->
+    <cv:EmptyToHiddenConverter     x:Key="EmptyToHiddenConverter"/>
+    <cv:NullToVisibleConverter     x:Key="NullToVisibleConverter"/>
+    <cv:NotNullToVisibleConverter  x:Key="NotNullToVisibleConverter"/>
+    <cv:BoolToVisibleConverter     x:Key="BoolToVisibleConverter"/>
+    <cv:FalseToVisibleConverter    x:Key="FalseToVisibleConverter"/>
+    <cv:InverseBoolConverter       x:Key="InverseBoolConverter"/>
+    <cv:IntEqualConverter          x:Key="IntEqualConverter"/>
+    <cv:StepVisibilityConverter    x:Key="StepVisibilityConverter"/>
+    <cv:ModeNameConverter          x:Key="ModeNameConverter"/>
+
+</ResourceDictionary>

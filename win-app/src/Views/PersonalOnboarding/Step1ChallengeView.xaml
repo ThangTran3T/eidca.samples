@@ -1,0 +1,33 @@
+<UserControl x:Class="eIDCA.WinApp.Views.PersonalOnboarding.Step1ChallengeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls">
+    <StackPanel>
+        <TextBlock Text="Bước 1 — Lấy Challenge" Style="{StaticResource H2}"/>
+        <TextBlock Text="Nhập số CCCD để lấy challenge từ server eIDCA." Style="{StaticResource Body}"/>
+
+        <StackPanel>
+            <TextBlock Text="Số CCCD / CMND" Style="{StaticResource Caption}"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="140"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding IdNumber, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource InputBox}"
+                         Margin="0,0,8,0"/>
+                <Button Grid.Column="1" Content="🔄 Lấy Challenge"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding GetChallengeCommand}"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}"/>
+            </Grid>
+            <TextBlock Text="💡 Số CCCD sẽ tự điền khi thẻ được đặt lên đầu đọc."
+                       Style="{StaticResource Caption}"/>
+        </StackPanel>
+
+        <TextBlock Text="{Binding StatusMsg}" Style="{StaticResource StatusLabel}"
+                   Visibility="{Binding StatusMsg, Converter={StaticResource EmptyToHiddenConverter}}"/>
+
+        <controls:CodePanelControl DataContext="{Binding CodePanel}"/>
+    </StackPanel>
+</UserControl>

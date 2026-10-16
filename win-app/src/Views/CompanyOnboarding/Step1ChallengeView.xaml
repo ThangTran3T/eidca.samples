@@ -1,0 +1,26 @@
+<UserControl x:Class="eIDCA.WinApp.Views.CompanyOnboarding.Step1ChallengeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls">
+    <StackPanel>
+        <TextBlock Text="Bước 1 — Lấy Challenge (Tổ chức)" Style="{StaticResource H2}"/>
+        <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="Số CCCD" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding IdNumber, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource InputBox}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="Company ID" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding CompanyId, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource InputBox}"/>
+            </StackPanel>
+        </Grid>
+        <TextBlock Text="{Binding StatusMsg}" Style="{StaticResource StatusLabel}"
+                   Visibility="{Binding StatusMsg, Converter={StaticResource EmptyToHiddenConverter}}"/>
+        <Button Content="🔄 Lấy Challenge" Style="{StaticResource PrimaryButton}"
+                Command="{Binding GetChallengeCommand}" HorizontalAlignment="Left" Padding="18,9"/>
+        <controls:CodePanelControl DataContext="{Binding CodePanel}"/>
+    </StackPanel>
+</UserControl>

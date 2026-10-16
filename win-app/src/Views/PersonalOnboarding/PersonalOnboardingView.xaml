@@ -1,0 +1,43 @@
+<UserControl x:Class="eIDCA.WinApp.Views.PersonalOnboarding.PersonalOnboardingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:eIDCA.WinApp.ViewModels.PersonalOnboarding"
+             xmlns:controls="clr-namespace:eIDCA.WinApp.Views.Controls"
+             xmlns:views="clr-namespace:eIDCA.WinApp.Views.PersonalOnboarding">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+
+            <!-- Flow Title -->
+            <StackPanel>
+                <TextBlock Text="Đăng ký Chứng thư số Cá nhân" Style="{StaticResource H1}"/>
+                <TextBlock Style="{StaticResource Body}" Margin="0,4,0,0">
+                    Xác thực danh tính qua CCCD gắn chip và cấp CTS (eIDCA).
+                </TextBlock>
+            </StackPanel>
+
+            <!-- Stepper -->
+            <controls:StepperControl CurrentStep="{Binding CurrentStep}"
+                                     Step0Label="1. Lấy Challenge"
+                                     Step1Label="2. Gửi Signature"
+                                     Step2Label="3. Kiểm tra CTS"/>
+
+            <!-- Step 1 -->
+            <Border Style="{StaticResource CardPanel}">
+                <views:Step1ChallengeView DataContext="{Binding Step1}"/>
+            </Border>
+
+            <!-- Step 2 (visible after step 1 done) -->
+            <Border Style="{StaticResource CardPanel}"
+                    Visibility="{Binding CurrentStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=1}">
+                <views:Step2SignatureView DataContext="{Binding Step2}"/>
+            </Border>
+
+            <!-- Step 3 (visible after step 2 done) -->
+            <Border Style="{StaticResource CardPanel}"
+                    Visibility="{Binding CurrentStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=2}">
+                <views:Step3CheckView DataContext="{Binding Step3}"/>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

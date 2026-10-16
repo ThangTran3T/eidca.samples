@@ -1,0 +1,18 @@
+{
+  "name": "eidca-web-app-demo",
+  "version": "1.0.0",
+  "description": "eIDCA Web Integration Demo — Sample code tích hợp đăng ký & ký số",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "mock": "node ../mock/mock-server.js"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}
