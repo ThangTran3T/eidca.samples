@@ -101,6 +101,8 @@ export function modelToSvg(model, { opacity = 1, title = 'Hình thức chữ ký
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<svg xmlns="http://www.w3.org/2000/svg" width="${n(W)}pt" height="${n(H)}pt" viewBox="0 0 ${n(W)} ${n(H)}">` +
     `<title>${escapeXml(title)}</title>` +
-    `<g opacity="${n(opacity)}">${parts.join('')}</g></svg>\n`
+    // Clip to the signature box, consistent with canvas and PDF output.
+    `<clipPath id="box"><rect x="0" y="0" width="${n(W)}" height="${n(H)}"/></clipPath>` +
+    `<g opacity="${n(opacity)}" clip-path="url(#box)">${parts.join('')}</g></svg>\n`
   );
 }

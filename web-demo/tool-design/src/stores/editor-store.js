@@ -147,9 +147,10 @@ export const useEditor = create((set, get) => {
     },
 
     // ── signature actions ─────────────────────────────────────────────────
-    addFromTemplate(template, { page, displayTopLeft } = {}) {
+    addFromTemplate(template, { page, displayTopLeft, rect } = {}) {
       const p = page ?? get().currentPage;
-      const sig = ops.createSignatureFromTemplate(template, { page: p, geom: geomOf(p), viewRotation: get().viewRotation, displayTopLeft });
+      let sig = ops.createSignatureFromTemplate(template, { page: p, geom: geomOf(p), viewRotation: get().viewRotation, displayTopLeft });
+      if (rect) sig = ops.setSignatureRect(sig, rect, geomOf(p));
       commit((s) => ops.addSignature(s, sig));
       set({ selection: { signatureId: sig.id, elementId: null }, currentPage: p });
       return sig;

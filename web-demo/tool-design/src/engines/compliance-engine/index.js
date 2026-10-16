@@ -58,6 +58,7 @@ export function evaluateCompliance(input) {
     }
     return {
       ruleId: rule.id,
+      displayId: rule.baseId ?? rule.id,
       title: rule.title,
       severity: rule.severity,
       kind: rule.kind,

@@ -166,6 +166,10 @@ export function drawImagePlaceholder(ctx, item, k = 1) {
 export function drawModel(ctx, model, opts = {}) {
   ctx.save();
   ctx.globalAlpha *= opts.opacity ?? 1;
+  // Signature appearances are clipped to the widget box (as PDF viewers do with the appearance BBox).
+  ctx.beginPath();
+  ctx.rect(0, 0, model.width, model.height);
+  ctx.clip();
   drawBoxStyle(ctx, model);
   for (const item of model.items) {
     if (!item.visible) continue;

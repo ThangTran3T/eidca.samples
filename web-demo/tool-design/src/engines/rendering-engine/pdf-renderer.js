@@ -95,6 +95,8 @@ export async function drawModelOnPage(page, model, placement, resources, { opaci
   // Local drawing space: y-up, origin at design top-left (see ARCHITECTURE.md §Coordinates).
   const local = compose(scaleM(1, -1), M);
   page.pushOperators(pushGraphicsState(), concatTransformationMatrix(...local));
+  // Clip to the signature box, like the appearance stream BBox of a real signature widget.
+  page.pushOperators(rectangle(0, -model.height, model.width, model.height), clip(), endPath());
 
   const { background, border } = model.style ?? {};
   const W = model.width;
