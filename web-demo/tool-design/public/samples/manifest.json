@@ -1,0 +1,57 @@
+[
+  {
+    "file": "quyet-dinh-mau.pdf",
+    "title": "Quyết định hành chính (Nghị định 30) — 2 trang",
+    "pages": 2,
+    "signatureBlock": {
+      "page": 1,
+      "centerX": 432.29,
+      "titleBottomY": 279.9,
+      "nameTopY": 194.86
+    }
+  },
+  {
+    "file": "hop-dong-dien-tu.pdf",
+    "title": "Hợp đồng điện tử — nhiều trang, 2 bên ký",
+    "pages": 3,
+    "signatureAreas": [
+      {
+        "party": "A",
+        "page": 3,
+        "x": 85.04,
+        "yTop": 701.3,
+        "width": 233.86
+      },
+      {
+        "party": "B",
+        "page": 3,
+        "x": 318.9,
+        "yTop": 701.3,
+        "width": 233.86
+      }
+    ]
+  },
+  {
+    "file": "phieu-ket-qua-xet-nghiem.pdf",
+    "title": "Phiếu kết quả xét nghiệm — bệnh viện/bác sĩ",
+    "pages": 1,
+    "signatureArea": {
+      "page": 1,
+      "x": 325.99,
+      "yTop": 452.2,
+      "width": 226.77
+    }
+  },
+  {
+    "file": "kiem-thu-xoay-trang.pdf",
+    "title": "Kiểm thử xoay trang & CropBox — 5 trang",
+    "pages": 5,
+    "rotations": [
+      0,
+      90,
+      180,
+      270,
+      0
+    ]
+  }
+]
