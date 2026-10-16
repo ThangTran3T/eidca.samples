@@ -683,12 +683,12 @@
           <div class="field">
             <label for="eidcaUrl">eIDCA Service URL <small style="color:var(--muted)">(chạy trên máy
                 bạn)</small></label>
-            <input type="text" id="eidcaUrl" value="https://127.0.0.1:23458/api/sign-document"
+            <input type="text" id="eidcaUrl" value="https://127.0.0.1:17889/api/sign-document"
               onchange="localStorage.setItem('eidca_url', this.value)" />
           </div>
           <div class="info-box" id="archBox">
             ℹ️ <strong>eIDCA chạy trên máy tính của bạn</strong><br />
-            Trình duyệt sẽ gọi thẳng <code>127.0.0.1:23456</code> – không qua server.<br />
+            Trình duyệt sẽ gọi thẳng <code>127.0.0.1:17889</code> – không qua server.<br />
             Nếu bị chặn (CORS / PNA), yêu cầu đội eIDCA bổ sung header cho service.
           </div>
         </div>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>VNeCA.SigningPoC</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../VNeCA.SigningPoC/Models.cs" Link="Core/Models.cs" />
+    <Compile Include="../VNeCA.SigningPoC/Native.cs" Link="Core/Native.cs" />
+    <Compile Include="../VNeCA.SigningPoC/GetCertificates.cs" Link="Core/GetCertificates.cs" />
+    <Compile Include="../VNeCA.SigningPoC/Worker.cs" Link="Core/Worker.cs" />
+  </ItemGroup>
+</Project>
