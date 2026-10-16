@@ -8,11 +8,14 @@
     "node": ">=20"
   },
   "scripts": {
+    "predev": "node scripts/copy-pdfjs-assets.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/copy-pdfjs-assets.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "pretest:e2e": "node scripts/copy-pdfjs-assets.mjs",
     "test:e2e": "playwright test",
     "samples": "node scripts/generate-samples.mjs"
   },

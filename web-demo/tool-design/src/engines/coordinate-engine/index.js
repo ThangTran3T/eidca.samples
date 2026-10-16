@@ -265,3 +265,22 @@ export function roundRect(rect, decimals = 2) {
   const r = (v) => Math.round(v * f) / f;
   return { x: r(rect.x), y: r(rect.y), width: r(rect.width), height: r(rect.height) };
 }
+
+/**
+ * Inverse of signatureDisplayFrame: the axis-aligned display box covered by
+ * content of `design` size whose origin is at `origin`, rotated clockwise by
+ * `rotation` (what the canvas reports after a drag/resize).
+ */
+export function displayBoxFromFrame(origin, rotation, design) {
+  const { width: w, height: h } = design;
+  switch (normalizeRotation(rotation)) {
+    case 90:
+      return { x: origin.x - h, y: origin.y, width: h, height: w };
+    case 180:
+      return { x: origin.x - w, y: origin.y - h, width: w, height: h };
+    case 270:
+      return { x: origin.x, y: origin.y - w, width: h, height: w };
+    default:
+      return { x: origin.x, y: origin.y, width: w, height: h };
+  }
+}
