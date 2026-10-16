@@ -19,6 +19,8 @@ import { exportDesignerDocument } from './features/export/designer-io.js';
 
 export function mount(element, { theme, locale } = {}) {
   if (!element) throw new Error('mount(): element is required');
+  // Dev builds only: lets E2E tests assert exact PDF coordinates. Stripped from production bundles.
+  if (import.meta.env.DEV) window.__vnecaEditor = useEditor;
   const st = useEditor.getState();
   if (theme) st.setTheme(theme);
   if (locale) st.setLocale(locale);

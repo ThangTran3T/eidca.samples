@@ -29,7 +29,9 @@ import {
 import { resolveTemplate } from '../template-engine/index.js';
 import { variantKey } from './fonts.js';
 
-export const PREVIEW_NOTICE = 'Đây là bản xem trước hình thức chữ ký, chưa phải tài liệu được ký số hợp lệ.';
+import { PREVIEW_NOTICE } from './notice.js';
+
+export { PREVIEW_NOTICE };
 
 export function hexToRgb(hex) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex ?? '');

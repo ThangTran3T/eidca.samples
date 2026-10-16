@@ -7,7 +7,7 @@ import { Download, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useEditor } from '../../stores/editor-store.js';
 import { renderPreviewPdf, downloadBlob, slug } from '../../features/export/export-actions.js';
 import { openPdf, pageGeometry } from '../../services/pdf-service.js';
-import { PREVIEW_NOTICE } from '../../engines/rendering-engine/pdf-renderer.js';
+import { PREVIEW_NOTICE } from '../../engines/rendering-engine/notice.js';
 import { PageCanvas } from '../pdf/PageCanvas.jsx';
 import { Button, Callout, Spinner, Badge } from '../ui/index.jsx';
 

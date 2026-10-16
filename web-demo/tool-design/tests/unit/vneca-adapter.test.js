@@ -162,6 +162,14 @@ describe('legacy export', () => {
     expect(payload[0].hand_sig_img_b64).toBe(stripDataUrl(PNG));
   });
 
+  it('maps a logo to the hand_sig slot when the layout is logo-left/right (documented semantics)', () => {
+    const { payload, warnings } = exportLegacy([place(lib.hospital)]);
+    expect(payload[0].template).toBe('left');
+    expect(payload[0].hand_sig_img_b64).toBe(stripDataUrl(PNG));
+    expect(payload[0].watermark_img_b64).toBe('');
+    expect(warnings.some((w) => w.code === 'logo-as-hand-sig')).toBe(true);
+  });
+
   it('serialises for JSON bodies and multipart fields', () => {
     const { payload } = exportLegacy([place(lib.enterprise)]);
     expect(JSON.parse(vnecaLegacyAdapter.serialize(payload, 'pretty'))).toEqual(payload);

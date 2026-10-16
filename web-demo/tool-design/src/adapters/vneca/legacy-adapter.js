@@ -147,7 +147,14 @@ export function exportLegacy(signatures, { data, pageGeoms = {}, integerCoordina
     const { info, labels, first } = analyseText(t, warnings);
 
     const images = t.elements.filter((e) => e.type === 'image' && visible(e) && e.image.src);
-    const hand = images.find((e) => e.role === 'hand-signature');
+    // docs/api-reference.md: template "right" = "logo bên phải"; web-app: "logo/chữ ký phải".
+    // The hand_sig slot therefore carries a hand-signature image, or a logo when there is none.
+    let hand = images.find((e) => e.role === 'hand-signature');
+    const hinted = t.legacy?.template;
+    if (!hand && hinted && hinted !== 'text_only') {
+      hand = images.find((e) => e.role === 'logo');
+      if (hand) warnings.push(warn('logo-as-hand-sig', `Logo "${hand.name || hand.id}" được xuất vào hand_sig_img_b64 (bố cục "${hinted}" = logo/chữ ký ở ${hinted === 'center' ? 'giữa' : hinted === 'left' ? 'bên trái' : 'bên phải'}).`, { elementId: hand.id }));
+    }
     const watermarkCandidates = images.filter((e) => e !== hand);
     const watermark = watermarkCandidates.sort((a, b) => b.width * b.height - a.width * a.height)[0];
     for (const extra of watermarkCandidates.filter((e) => e !== watermark)) {

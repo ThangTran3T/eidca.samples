@@ -1,5 +1,4 @@
 /** Opening documents: local files, bundled samples and a blank A4 page. */
-import { PDFDocument } from 'pdf-lib';
 import { useEditor } from '../../stores/editor-store.js';
 import { readPdfFile, openPdf, extractPageText, PdfError } from '../../services/pdf-service.js';
 
@@ -68,6 +67,7 @@ export async function openBlankPdf() {
   const store = useEditor.getState();
   store.setDocLoading();
   try {
+    const { PDFDocument } = await import('pdf-lib');
     const pdf = await PDFDocument.create();
     pdf.addPage([595.28, 841.89]);
     pdf.setTitle('Trang A4 trắng');

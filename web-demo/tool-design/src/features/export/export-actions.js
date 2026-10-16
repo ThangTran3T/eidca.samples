@@ -3,7 +3,6 @@ import { useEditor } from '../../stores/editor-store.js';
 import { resolveTemplate } from '../../engines/template-engine/index.js';
 import { renderModelToCanvas } from '../../engines/rendering-engine/canvas-renderer.js';
 import { modelToSvg } from '../../engines/rendering-engine/svg-renderer.js';
-import { renderAppearancesToPdf } from '../../engines/rendering-engine/pdf-renderer.js';
 import { fontRegistry } from '../../services/font-service.js';
 import { processImage } from '../../services/image-service.js';
 import { exportDesignerDocument, exportTemplateFile, parseJsonText, detectJsonKind, importDesignerDocument, importTemplateFile } from './designer-io.js';
@@ -91,6 +90,8 @@ export function buildLegacyExport({ integerCoordinates = true } = {}) {
 export async function renderPreviewPdf() {
   const { doc, signatures, displayMode, runtimeData } = useEditor.getState();
   const mode = displayMode === 'placeholder' ? 'sample' : displayMode;
+  // pdf-lib is only needed here — load it on demand to keep the initial bundle small.
+  const { renderAppearancesToPdf } = await import('../../engines/rendering-engine/pdf-renderer.js');
   return renderAppearancesToPdf(doc?.bytes ?? null, signatures, { fontRegistry, mode, runtimeData, title: doc?.name ? `Xem trước hình thức chữ ký — ${doc.name}` : 'Xem trước hình thức chữ ký' });
 }
 

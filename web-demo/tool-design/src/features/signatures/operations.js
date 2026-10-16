@@ -11,6 +11,7 @@ import {
   clampRectToPage,
   normalizeRotation,
   pdfRectToDisplay,
+  roundRect,
 } from '../../engines/coordinate-engine/index.js';
 
 export const DEFAULT_A4 = createPageGeometry({ mediaBox: [0, 0, 595.28, 841.89] });
@@ -32,7 +33,7 @@ export function createSignatureFromTemplate(template, { page = 1, geom = DEFAULT
   t.builtIn = false;
   const size = displaySize(geom, viewRotation);
   const tl = displayTopLeft ?? { x: (size.width - t.size.width) / 2, y: (size.height - t.size.height) / 2 };
-  const rect = clampRectToPage(geom, rectFromDisplayPlacement(geom, tl, t.size, 0, viewRotation));
+  const rect = roundRect(clampRectToPage(geom, rectFromDisplayPlacement(geom, tl, t.size, 0, viewRotation)), 2);
   return { id: uid('sig'), name: name ?? template.name, page, rect, rotation: 0, opacity: 1, visible: true, locked: false, template: t };
 }
 
@@ -64,8 +65,10 @@ export function duplicateSignature(sigs, id, geom = DEFAULT_A4) {
  * follows the rect and its elements reflow through their layout constraints.
  */
 export function setSignatureRect(sig, rect, geom = DEFAULT_A4) {
-  const size = designSizeForRect(geom, rect, sig.rotation);
-  return { ...sig, rect, template: resizeTemplate(sig.template, size) };
+  // 0.01 pt (≈0.0035 mm) precision keeps exported JSON clean without visible effect.
+  const r = roundRect(rect, 2);
+  const size = designSizeForRect(geom, r, sig.rotation);
+  return { ...sig, rect: r, template: resizeTemplate(sig.template, size) };
 }
 
 /** Rotate content by 90° steps, keeping the box centre fixed on the page. */
