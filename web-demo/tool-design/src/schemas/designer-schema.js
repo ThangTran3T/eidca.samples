@@ -180,6 +180,10 @@ export const templateSchema = z.object({
     .object({
       template: z.enum(['right', 'left', 'center', 'text_only']).optional(),
       contact: z.string().max(500).optional(),
+      /** Labels imported from legacy JSON that have no element-level meaning (e.g. contact_label). */
+      labels: z.record(z.string(), z.string().max(500)).optional(),
+      /** Unknown legacy fields, preserved verbatim and re-emitted on export. */
+      extra: z.record(z.string(), z.unknown()).optional(),
     })
     .default({}),
   builtIn: z.boolean().default(false),
