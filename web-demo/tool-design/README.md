@@ -54,7 +54,7 @@ Lưu ý:
 - Nên dùng **HTTPS** (tính năng sao chép vào clipboard cần secure context; các phần khác chạy cả trên HTTP).
 - Không mở trực tiếp `dist/index.html` bằng `file://` — trình duyệt chặn module script và `fetch` tệp cục bộ; luôn phục vụ qua web server.
 - Nếu nhúng bằng `<iframe>` từ VNeCA CMS ở **tên miền khác**, sửa `frame-ancestors 'self'` trong `.htaccess`/`web.config` thành `frame-ancestors 'self' https://ten-mien-cms`.
-- Dung lượng ~9 MB (trong đó PDF.js CMaps/phông ~5 MB, 4 PDF mẫu, 8 phông Liberation). Có thể xóa `samples/` nếu không cần tài liệu mẫu (nút “Tài liệu mẫu” khi đó sẽ báo lỗi tải).
+- Dung lượng ~11 MB (PDF.js CMaps/phông/WASM, mã JS, 8 phông Liberation, 4 PDF mẫu). Có thể xóa `samples/` nếu không cần tài liệu mẫu (nút “Tài liệu mẫu” khi đó sẽ báo lỗi tải).
 
 ## Tài liệu mẫu (`public/samples/`)
 
