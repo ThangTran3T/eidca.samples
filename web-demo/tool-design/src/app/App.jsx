@@ -57,6 +57,7 @@ export function App() {
   const t = useT();
   const theme = useEditor((s) => s.theme);
   const locale = useEditor((s) => s.locale);
+  const panels = useEditor((s) => s.panels);
   const boot = useBootstrap();
   useKeyboardShortcuts();
 
@@ -96,11 +97,11 @@ export function App() {
       <div className="flex h-full min-h-0 flex-col" data-testid="app">
         <Toolbar />
         <div className="flex min-h-0 flex-1">
-          <LeftSidebar />
+          {panels.left && <LeftSidebar />}
           <main className="flex min-w-0 flex-1 flex-col" aria-label="Khung làm việc">
             <Workspace />
           </main>
-          <PropertiesPanel />
+          {panels.right && <PropertiesPanel />}
         </div>
         <StatusBar />
       </div>

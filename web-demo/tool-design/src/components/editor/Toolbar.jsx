@@ -31,6 +31,8 @@ import {
   Crosshair,
   PanelsTopLeft,
   Braces,
+  PanelLeft,
+  PanelRight,
 } from 'lucide-react';
 import { useEditor, selectSelectedSignature, clampZoom } from '../../stores/editor-store.js';
 import { useDialogs, openFilePicker } from '../../stores/ui-store.js';
@@ -60,6 +62,7 @@ export function Toolbar() {
   const sig = useEditor(selectSelectedSignature);
   const hasSigs = useEditor((s) => s.signatures.length > 0);
   const library = useEditor((s) => s.library);
+  const panels = useEditor((s) => s.panels);
   const open = useDialogs((s) => s.open);
   const st = useEditor.getState;
 
@@ -82,9 +85,9 @@ export function Toolbar() {
         </div>
         <div className="min-w-0 leading-tight">
           <div className="whitespace-nowrap text-[13px] font-semibold tracking-tight">
-            VNeCA <span className="font-normal text-[var(--text-muted)]">Signature Designer</span>
+            VNeCA <span className="font-normal text-[var(--text-muted)] max-[1480px]:hidden">Signature Designer</span>
           </div>
-          <div className="flex max-w-[220px] items-center gap-1 text-[11.5px] text-[var(--text-muted)]" data-testid="doc-name">
+          <div className="flex max-w-[220px] items-center gap-1 text-[11.5px] text-[var(--text-muted)] max-[1480px]:max-w-[140px]" data-testid="doc-name">
             <FileText className="h-3 w-3 shrink-0" />
             <span className="truncate" title={doc?.name}>
               {doc ? `${doc.name} · ${doc.pages.length} trang` : t('toolbar.untitled')}
@@ -125,8 +128,8 @@ export function Toolbar() {
           ))}
         </MenuContent>
       </Menu>
-      <Button variant="ghost" size="sm" onClick={pickPdf} data-testid="open-pdf">
-        <FileUp className="h-4 w-4" /> {t('toolbar.openPdf')}
+      <Button variant="ghost" size="sm" onClick={pickPdf} data-testid="open-pdf" title={t('toolbar.openPdf')}>
+        <FileUp className="h-4 w-4" /> <span className="max-[1480px]:hidden">{t('toolbar.openPdf')}</span>
       </Button>
       <IconButton label={t('toolbar.saveTemplate')} shortcut="Ctrl+S" disabled={!sig} onClick={() => open('save')} data-testid="save-template">
         <Save className="h-4 w-4" />
@@ -135,14 +138,14 @@ export function Toolbar() {
       <IconButton label={t('toolbar.importJson')} onClick={() => open('import')} data-testid="import-json">
         <FileInput className="h-4 w-4" />
       </IconButton>
-      <Button variant="ghost" size="sm" disabled={!hasSigs} onClick={() => open('export')} data-testid="export-json">
-        <FileJson className="h-4 w-4" /> {t('toolbar.exportJson')}
+      <Button variant="ghost" size="sm" disabled={!hasSigs} onClick={() => open('export')} data-testid="export-json" title={t('toolbar.exportJson')}>
+        <FileJson className="h-4 w-4" /> <span className="max-[1480px]:hidden">{t('toolbar.exportJson')}</span>
       </Button>
       <Menu>
         <Tooltip content={sig ? t('toolbar.exportPng') : 'Chọn một chữ ký để xuất PNG'}>
           <MenuTrigger asChild disabled={!sig}>
             <Button variant="ghost" size="sm" disabled={!sig} data-testid="export-png">
-              <ImageDown className="h-4 w-4" /> PNG
+              <ImageDown className="h-4 w-4" /> <span className="max-[1480px]:hidden">PNG</span>
             </Button>
           </MenuTrigger>
         </Tooltip>
@@ -157,8 +160,8 @@ export function Toolbar() {
       <IconButton label={t('toolbar.exportSvg')} disabled={!sig} onClick={() => exportSvg(sig)} data-testid="export-svg">
         <FileCode2 className="h-4 w-4" />
       </IconButton>
-      <Button variant={view === 'rendered' ? 'subtle' : 'ghost'} size="sm" disabled={!hasSigs} onClick={() => st().setView(view === 'rendered' ? 'placement' : 'rendered')} data-testid="preview-pdf">
-        <FileSearch className="h-4 w-4" /> {t('toolbar.previewPdf')}
+      <Button variant={view === 'rendered' ? 'subtle' : 'ghost'} size="sm" disabled={!hasSigs} onClick={() => st().setView(view === 'rendered' ? 'placement' : 'rendered')} data-testid="preview-pdf" title={t('toolbar.previewPdf')}>
+        <FileSearch className="h-4 w-4" /> <span className="max-[1480px]:hidden">{t('toolbar.previewPdf')}</span>
       </Button>
       <Divider />
       <IconButton label={t('toolbar.undo')} shortcut="Ctrl+Z" disabled={!canUndo} onClick={() => st().undo()} data-testid="undo">
@@ -251,6 +254,12 @@ export function Toolbar() {
         <Crosshair className="h-4 w-4" />
       </IconButton>
       <Divider />
+      <IconButton label="Ẩn/hiện thư viện" active={panels.left} onClick={() => st().togglePanel('left')} data-testid="toggle-left">
+        <PanelLeft className="h-4 w-4" />
+      </IconButton>
+      <IconButton label="Ẩn/hiện bảng thuộc tính" active={panels.right} onClick={() => st().togglePanel('right')} data-testid="toggle-right">
+        <PanelRight className="h-4 w-4" />
+      </IconButton>
       <IconButton label={t('toolbar.theme')} onClick={() => st().setTheme(theme === 'dark' ? 'light' : 'dark')} data-testid="toggle-theme">
         {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </IconButton>

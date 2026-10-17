@@ -53,6 +53,8 @@ export const useEditor = create((set, get) => {
     customTemplates: loadCustomTemplates(),
     toasts: [],
     cursor: null, // {x, y} in PDF points on currentPage
+    panels: { left: true, right: true },
+    togglePanel: (side) => set({ panels: { ...get().panels, [side]: !get().panels[side] } }),
 
     // ── geometry helpers ──────────────────────────────────────────────────
     geometry(page) {

@@ -23,7 +23,7 @@ function sniffMime(bytes) {
 
 // Only same-document references (e.g. <textPath href="#ring">) survive; external/javascript: URLs are stripped.
 DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
-  if ((data.attrName === 'href' || data.attrName === 'xlink:href') && !/^#[w-]+$/.test(data.attrValue ?? '')) data.keepAttr = false;
+  if ((data.attrName === 'href' || data.attrName === 'xlink:href') && !/^#[\w-]+$/.test(data.attrValue ?? '')) data.keepAttr = false;
 });
 
 /** Sanitise untrusted SVG markup: no scripts, event handlers, foreignObject, styles or external references. */
@@ -32,6 +32,7 @@ export function sanitizeSvg(markup) {
     USE_PROFILES: { svg: true, svgFilters: true },
     FORBID_TAGS: ['foreignObject', 'script', 'iframe', 'image', 'use', 'a', 'style'],
     FORBID_ATTR: ['style'],
+    ADD_ATTR: ['href'], // vetted by the hook above: only #fragment references are kept
   });
   if (!clean || !/<svg[\s>]/i.test(clean)) throw new Error('SVG không hợp lệ hoặc bị loại bỏ khi làm sạch.');
   return clean;

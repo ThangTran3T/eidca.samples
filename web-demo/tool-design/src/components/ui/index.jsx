@@ -281,7 +281,8 @@ export function Segmented({ value, onChange, options, label, size = 'sm', testId
           type="button"
           role="radio"
           aria-checked={value === o.value}
-          title={o.title}
+          title={o.title ?? (typeof o.label === 'string' ? o.label : undefined)}
+          aria-label={typeof o.label === 'string' && o.label ? o.label : o.title}
           onClick={() => onChange(o.value)}
           className={cn(
             'inline-flex items-center gap-1.5 whitespace-nowrap rounded-[5px] font-medium transition-colors',
@@ -290,7 +291,7 @@ export function Segmented({ value, onChange, options, label, size = 'sm', testId
           )}
         >
           {o.icon}
-          {o.label}
+          {o.label && <span className={o.icon ? 'max-[1480px]:hidden' : undefined}>{o.label}</span>}
         </button>
       ))}
     </div>
