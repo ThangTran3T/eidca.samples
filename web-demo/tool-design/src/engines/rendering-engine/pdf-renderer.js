@@ -189,7 +189,10 @@ export async function drawModelOnPage(page, model, placement, resources, { opaci
   page.pushOperators(popGraphicsState());
 }
 
-/** Stamp the "preview only" notice at the top of the visible page area, upright for the reader. */
+/**
+ * Stamp the "preview only" notice at the bottom edge of the visible page, upright for the reader.
+ * (Bottom, not top: Decree 30 cell 14 — electronic-copy signatures — lives in the top margin.)
+ */
 async function stampNotice(page, resources) {
   const geom = geometryOf(page);
   const font = await resources.font({ family: 'Arial', weight: 'bold', style: 'normal', size: 7 });
@@ -198,10 +201,11 @@ async function stampNotice(page, resources) {
   const tw = font.widthOfTextAtSize(text, size);
   const disp = geom.rotate === 90 || geom.rotate === 270;
   const visW = disp ? geom.view[3] - geom.view[1] : geom.view[2] - geom.view[0];
+  const visH = disp ? geom.view[2] - geom.view[0] : geom.view[3] - geom.view[1];
   const bandW = Math.min(visW - 8, tw + 10);
   // A tiny render model placed with the same maths as signatures, so it is upright on rotated pages.
   const design = { width: bandW, height: 12 };
-  const placement = { rect: rectFromDisplayPlacement(geom, { x: (visW - bandW) / 2, y: 3 }, design, 0, 0), rotation: 0 };
+  const placement = { rect: rectFromDisplayPlacement(geom, { x: (visW - bandW) / 2, y: visH - design.height - 3 }, design, 0, 0), rotation: 0 };
   const model = {
     width: design.width,
     height: design.height,

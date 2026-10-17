@@ -45,6 +45,12 @@ eIDCA/
 
 ---
 
+## 🖋️ Công cụ thiết kế hình thức chữ ký
+
+[`web-demo/tool-design`](web-demo/tool-design/README.md) — **VNeCA Signature Designer**: thiết kế hình thức hiển thị chữ ký số trên PDF ngay trong trình duyệt, có preset theo Nghị định 30/2020/NĐ-CP, kiểm tra tuân thủ và xuất cấu hình `sign_props` cho VNeCA.
+
+---
+
 ## 📖 Bắt đầu
 
 1. Clone repo và vào thư mục project bạn cần.

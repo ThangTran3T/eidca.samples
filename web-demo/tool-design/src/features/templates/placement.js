@@ -10,7 +10,8 @@ import { mmToPoints, displaySize, rectFromDisplayPlacement, clampRectToPage, rec
 import { imageContentUserRect, visibleImages } from '../../engines/compliance-engine/rules.js';
 
 const MARGIN_RIGHT = mmToPoints(15);
-const MARGIN_TOP = mmToPoints(10);
+// Cell 14 sits in the top margin above the national title (Decree 30 top margin is 20–25 mm), so stay close to the edge.
+const MARGIN_TOP = mmToPoints(4);
 
 export function suggestPlacement(template, { pageGeoms, sampleMeta, signatures = [], currentPage = 1 }) {
   const profile = template.complianceProfile;
