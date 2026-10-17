@@ -1,0 +1,42 @@
+# VNeCA Signature Designer — Apache (shared hosting)
+# Static site only: no PHP, no database. Every directive is wrapped so the
+# file still works on hosts where a module is disabled.
+
+Options -Indexes
+
+# ── MIME types required by PDF.js and the editor ─────────────────────────────
+# .mjs  : PDF.js worker, loaded as an ES module → must be a JavaScript MIME type
+# .wasm : PDF.js image decoders (JPEG2000/JBIG2)
+# .bcmap/.pfb : PDF.js CMaps and standard fonts (binary)
+<IfModule mod_mime.c>
+  AddType text/javascript .mjs .js
+  AddType application/wasm .wasm
+  AddType application/octet-stream .bcmap .pfb
+  AddType font/ttf .ttf
+  AddType image/svg+xml .svg
+  AddType application/json .json
+  AddCharset utf-8 .js .mjs .css .json .html .svg
+</IfModule>
+
+# ── Compression ──────────────────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml application/wasm font/ttf
+</IfModule>
+
+# ── Caching: hashed files in assets/ never change; index.html always revalidates
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|mjs|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(ttf|bcmap|pfb|wasm)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "no-referrer"
+  # Allow embedding only by pages on the same origin (e.g. VNeCA CMS on this host).
+  # Change to: frame-ancestors 'self' https://cms.example.vn  — if the CMS is on another domain.
+  Header set Content-Security-Policy "frame-ancestors 'self'"
+</IfModule>

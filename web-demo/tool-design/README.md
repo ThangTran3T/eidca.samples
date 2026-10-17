@@ -40,6 +40,22 @@ node scripts/capture-screenshots.mjs   # chụp lại ảnh màn hình docs (c�
 
 `predev`/`prebuild` tự chép tài nguyên PDF.js (CMaps, phông chuẩn, WASM) vào `public/pdfjs/` để chạy hoàn toàn offline.
 
+## Triển khai lên shared hosting
+
+Bản build là **website tĩnh** — không cần Node.js, PHP hay cơ sở dữ liệu trên máy chủ.
+
+1. Trên máy dev: `npm install && npm run build` → thư mục `dist/`.
+2. Tải **toàn bộ nội dung** `dist/` (kể cả tệp ẩn `.htaccess`) lên hosting qua FTP/File Manager, ở thư mục gốc hoặc thư mục con bất kỳ (ví dụ `public_html/cong-cu/thiet-ke-chu-ky/`). Đường dẫn tương đối nên không cần sửa gì.
+3. Mở `https://ten-mien/cong-cu/thiet-ke-chu-ky/`.
+
+`dist/` có sẵn `.htaccess` (Apache/LiteSpeed — cPanel, DirectAdmin) và `web.config` (IIS — Plesk Windows). Hai tệp này **bắt buộc**: chúng khai báo kiểu MIME cho `.mjs` (worker PDF.js), `.wasm`, `.bcmap`, `.pfb`, `.ttf`. Thiếu chúng thì IIS trả 404 cho phông và ứng dụng không khởi động; Apache cũ có thể trả sai MIME khiến worker PDF.js bị trình duyệt chặn. Các chỉ thị nén/cache/header được bọc `IfModule`, host tắt module nào thì chỉ mất phần đó.
+
+Lưu ý:
+- Nên dùng **HTTPS** (tính năng sao chép vào clipboard cần secure context; các phần khác chạy cả trên HTTP).
+- Không mở trực tiếp `dist/index.html` bằng `file://` — trình duyệt chặn module script và `fetch` tệp cục bộ; luôn phục vụ qua web server.
+- Nếu nhúng bằng `<iframe>` từ VNeCA CMS ở **tên miền khác**, sửa `frame-ancestors 'self'` trong `.htaccess`/`web.config` thành `frame-ancestors 'self' https://ten-mien-cms`.
+- Dung lượng ~9 MB (trong đó PDF.js CMaps/phông ~5 MB, 4 PDF mẫu, 8 phông Liberation). Có thể xóa `samples/` nếu không cần tài liệu mẫu (nút “Tài liệu mẫu” khi đó sẽ báo lỗi tải).
+
 ## Tài liệu mẫu (`public/samples/`)
 
 | Tệp | Nội dung |
