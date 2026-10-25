@@ -1,0 +1,14 @@
+{
+  "name": "@vneca/uat-workbench",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Website UAT thủ công cho VNeCA Unified Agent v2 — thay Postman Desktop, gửi từng bước bằng tay",
+  "type": "module",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "scripts": {
+    "start": "node --use-system-ca src/server.mjs",
+    "test": "node --test \"test/*.test.mjs\""
+  }
+}

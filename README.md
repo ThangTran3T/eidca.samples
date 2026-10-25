@@ -51,6 +51,12 @@ eIDCA/
 
 ---
 
+## 🧪 Website UAT thủ công Unified Agent v2
+
+[`web-demo/uat-workbench`](web-demo/uat-workbench/README.md) — website chạy cục bộ thay Postman Desktop cho bộ workbench `web-demo/uat-test`: nạp access, preflight operator, tạo/khóa phiên, gửi từng bước START/CONTINUE/STATUS/RESULT/CANCEL, recovery, lưu và verify độc lập, ghi kết quả 41 ca UAT và xuất báo cáo.
+
+---
+
 ## 📖 Bắt đầu
 
 1. Clone repo và vào thư mục project bạn cần.
