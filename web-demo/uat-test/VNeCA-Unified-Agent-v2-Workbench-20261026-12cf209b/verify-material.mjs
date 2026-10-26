@@ -1,0 +1,10 @@
+import fs from 'node:fs';import crypto from 'node:crypto';
+if(process.argv.length!==4)throw Error('Usage: node verify-material.mjs completed-result.json original-input-file');
+const response=JSON.parse(fs.readFileSync(process.argv[2],'utf8').replace(/^\uFEFF/,'')),r=response.result;
+if(response.status!=='COMPLETED'||r?.kind!=='SIGNING_MATERIAL'||r.verification_scope!=='SIGNING_MATERIAL')throw Error('Not committed signing material');
+const b64=s=>{const b=Buffer.from(s,'base64');if(b.toString('base64')!==s)throw Error('Noncanonical base64');return b;};
+const sha=b=>crypto.createHash('sha256').update(b).digest(),source=fs.readFileSync(process.argv[3]),input=b64(r.signing_input.content_base64),signature=b64(r.signature_value),leaf=new crypto.X509Certificate(b64(r.certificate_chain_base64[0]));
+if(sha(source).toString('base64')!==r.document_digest.value||sha(input).toString('base64')!==r.signing_input.digest.value||leaf.fingerprint256.replaceAll(':','').toLowerCase()!==r.certificate_sha256)throw Error('Input/material/certificate mismatch');
+let options;if(r.signature_algorithm==='RSA_PKCS1_SHA256')options={key:leaf.publicKey,padding:crypto.constants.RSA_PKCS1_PADDING};else if(r.signature_algorithm==='RSA_PSS_SHA256')options={key:leaf.publicKey,padding:crypto.constants.RSA_PKCS1_PSS_PADDING,saltLength:32};else if(r.signature_algorithm==='ECDSA_SHA256')options={key:leaf.publicKey,dsaEncoding:'der'};else throw Error('Unsupported signature encoding/algorithm');
+if(!crypto.verify('sha256',input,options,signature))throw Error('Independent raw signature verification failed');
+console.log(JSON.stringify({status:'RAW_SIGNATURE_PASS',scope:'SIGNING_MATERIAL_ONLY_NOT_ASSEMBLED_CMS_PDF_OR_XML',inputSha256:sha(source).toString('hex'),exactSigningInputSha256:sha(input).toString('hex'),certificateSha256:r.certificate_sha256,pkixRevocation:'NOT_CHECKED',signedAttributesDocumentCoverage:'NOT_CHECKED',fullArtifactVerification:'NOT_CHECKED'}));

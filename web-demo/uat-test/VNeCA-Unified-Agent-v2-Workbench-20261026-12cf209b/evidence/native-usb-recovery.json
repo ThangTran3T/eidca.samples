@@ -1,0 +1,567 @@
+{
+  "classification": "ISOLATED_SOFTWARE_INTEGRATION_NOT_REAL_PROVIDER_E2E",
+  "at": "2026-10-25T17:09:05.490Z",
+  "applicationSourceRevision": "47e87f2fac01fca56443b0ed098bed229f15ab0f",
+  "originalLogSha256": "aab0e332d1fb3c6c4318876e8b5ce56b14f046a963bdf236d8695d16307a4308",
+  "accepted_result_digest": "c28ff7c0c22f1578db9b26f31e7d7e9e45602535ca5348ba2be7180c624b3254",
+  "actualSigningSubmissions": 0,
+  "actualTestCaKeyOperations": 0,
+  "actualUsbOsProcessRecovery": {
+    "enabled": true,
+    "publicOrigin": "http://127.0.0.1:59145",
+    "stablePublicOrigin": true,
+    "transitions": [
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 7508,
+        "oldPid": 9492,
+        "phase": "AFTER_CANONICAL_START",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 19300,
+        "oldPid": 7508,
+        "phase": "AFTER_SELECT_METHOD",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 30092,
+        "oldPid": 19300,
+        "phase": "AFTER_USB_RESULT_DURABLE_BEFORE_UPLOAD",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 31376,
+        "oldPid": 30092,
+        "phase": "AFTER_SELECT_CERTIFICATE",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 41980,
+        "oldPid": 31376,
+        "phase": "AFTER_PROVIDER_ACTION_BEFORE_RESULT",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 12600,
+        "oldPid": 41980,
+        "phase": "AFTER_ACCEPTED_RESULT",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 17004,
+        "oldPid": 12600,
+        "phase": "AFTER_UNLINK_BEFORE_OWNER_ACK",
+        "signal": "TerminateProcess"
+      }
+    ]
+  },
+  "agent": {
+    "acceptedReaderUpgrade": false,
+    "agentCmsReparsedAndSignatureVerified": false,
+    "agentKind": "LOCAL_AGENT",
+    "agentXmlReparsedAndSignatureVerified": false,
+    "artifactDigest": {
+      "algorithm": "SHA-256",
+      "value": "wo/3wMIvFXjbmybzHn1+nkVgJTXKU0i6K+cYDGJLMlQ="
+    },
+    "certificateSha256": "b7e0a773612be645fccd6d99ec07ee058932a0cd8240d9a7ce5d409b96266e8a",
+    "classification": "ISOLATED_SOFTWARE_INTEGRATION_NOT_REAL_PROVIDER_E2E",
+    "customerPaths": [
+      "/api/sign-document"
+    ],
+    "documentDigestFirst": false,
+    "drainedBeforeResult": true,
+    "exactCertificateSelectorMatched": false,
+    "independentlyReparsedPdf": true,
+    "installedHighLevelCustomerSdk": false,
+    "nativeOversizeRefusedBeforeCopyOrRoot": true,
+    "originalOnlyRecovery": true,
+    "osProcessRecovery": {
+      "enabled": true,
+      "publicOrigin": "http://127.0.0.1:59145",
+      "stablePublicOrigin": true,
+      "transitions": [
+        {
+          "agentOrigin": "http://127.0.0.1:59145",
+          "newPid": 7508,
+          "oldPid": 9492,
+          "phase": "AFTER_CANONICAL_START",
+          "signal": "TerminateProcess"
+        },
+        {
+          "agentOrigin": "http://127.0.0.1:59145",
+          "newPid": 19300,
+          "oldPid": 7508,
+          "phase": "AFTER_SELECT_METHOD",
+          "signal": "TerminateProcess"
+        },
+        {
+          "agentOrigin": "http://127.0.0.1:59145",
+          "newPid": 30092,
+          "oldPid": 19300,
+          "phase": "AFTER_USB_RESULT_DURABLE_BEFORE_UPLOAD",
+          "signal": "TerminateProcess"
+        },
+        {
+          "agentOrigin": "http://127.0.0.1:59145",
+          "newPid": 31376,
+          "oldPid": 30092,
+          "phase": "AFTER_SELECT_CERTIFICATE",
+          "signal": "TerminateProcess"
+        },
+        {
+          "agentOrigin": "http://127.0.0.1:59145",
+          "newPid": 41980,
+          "oldPid": 31376,
+          "phase": "AFTER_PROVIDER_ACTION_BEFORE_RESULT",
+          "signal": "TerminateProcess"
+        },
+        {
+          "agentOrigin": "http://127.0.0.1:59145",
+          "newPid": 12600,
+          "oldPid": 41980,
+          "phase": "AFTER_ACCEPTED_RESULT",
+          "signal": "TerminateProcess"
+        },
+        {
+          "agentOrigin": "http://127.0.0.1:59145",
+          "newPid": 17004,
+          "oldPid": 12600,
+          "phase": "AFTER_UNLINK_BEFORE_OWNER_ACK",
+          "signal": "TerminateProcess"
+        }
+      ]
+    },
+    "requests": [
+      {
+        "code": "CAPABILITY_NOT_READY",
+        "command": "START",
+        "http": 422,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "7027131630c1f709b501366a3efdca54a54a9ba00b534c43aebd0576a952a4f5",
+        "secFetchAbsent": true,
+        "status": "FAILED"
+      },
+      {
+        "code": "PAYLOAD_TOO_LARGE",
+        "command": "START",
+        "http": 413,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "ef39ce5fcc62dd040176646079fa753dc6a4393ef0913ab5c32c5ebfcc6076e8",
+        "secFetchAbsent": true,
+        "status": "FAILED"
+      },
+      {
+        "code": "DEPENDENCY_UNAVAILABLE",
+        "command": "START",
+        "http": 503,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "02ede7292510d07ff65108fbe3ffb60783daa4de97229183b67caeaa047f7073",
+        "secFetchAbsent": true,
+        "status": "FAILED"
+      },
+      {
+        "code": null,
+        "command": "START",
+        "http": 200,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "02ede7292510d07ff65108fbe3ffb60783daa4de97229183b67caeaa047f7073",
+        "secFetchAbsent": true,
+        "status": "ACTION_REQUIRED"
+      },
+      {
+        "code": null,
+        "command": "START",
+        "http": 200,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "02ede7292510d07ff65108fbe3ffb60783daa4de97229183b67caeaa047f7073",
+        "secFetchAbsent": true,
+        "status": "ACTION_REQUIRED"
+      },
+      {
+        "code": null,
+        "command": "START",
+        "http": 200,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "02ede7292510d07ff65108fbe3ffb60783daa4de97229183b67caeaa047f7073",
+        "secFetchAbsent": true,
+        "status": "ACTION_REQUIRED"
+      },
+      {
+        "code": null,
+        "command": "CONTINUE",
+        "http": 200,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "de8024de2bf08bf0ca7b5697e0cdfeeed3e7da1b47a3a2fd80a8e86564abe94d",
+        "secFetchAbsent": true,
+        "status": "ACTION_REQUIRED"
+      },
+      {
+        "code": null,
+        "command": "CONTINUE",
+        "http": 200,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "de8024de2bf08bf0ca7b5697e0cdfeeed3e7da1b47a3a2fd80a8e86564abe94d",
+        "secFetchAbsent": true,
+        "status": "ACTION_REQUIRED"
+      },
+      {
+        "code": "DEPENDENCY_UNAVAILABLE",
+        "command": "CONTINUE",
+        "http": 503,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "763c5d2c2d43e6e9e5302024bb557c7679621f2a9877b4fe343c33ce0c258e51",
+        "secFetchAbsent": true,
+        "status": "FAILED"
+      },
+      {
+        "code": null,
+        "command": "STATUS",
+        "http": 202,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "35b247b6c01aed1ebb4efd24713e59aed8da4d55028ea838fcbfd6beff9b877b",
+        "secFetchAbsent": true,
+        "status": "PROCESSING"
+      },
+      {
+        "code": null,
+        "command": "CONTINUE",
+        "http": 202,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "763c5d2c2d43e6e9e5302024bb557c7679621f2a9877b4fe343c33ce0c258e51",
+        "secFetchAbsent": true,
+        "status": "PROCESSING"
+      },
+      {
+        "code": null,
+        "command": "CONTINUE",
+        "http": 202,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "763c5d2c2d43e6e9e5302024bb557c7679621f2a9877b4fe343c33ce0c258e51",
+        "secFetchAbsent": true,
+        "status": "PROCESSING"
+      },
+      {
+        "code": null,
+        "command": "RESULT",
+        "http": 200,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "174e48b35c83a76b50556b8d487b58c2395aa9863a4e7f2ea4559b484921eddc",
+        "secFetchAbsent": true,
+        "status": "COMPLETED"
+      },
+      {
+        "code": null,
+        "command": "RESULT",
+        "http": 200,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "174e48b35c83a76b50556b8d487b58c2395aa9863a4e7f2ea4559b484921eddc",
+        "secFetchAbsent": true,
+        "status": "COMPLETED"
+      },
+      {
+        "code": "DEPENDENCY_UNAVAILABLE",
+        "command": "RESULT",
+        "http": 503,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "174e48b35c83a76b50556b8d487b58c2395aa9863a4e7f2ea4559b484921eddc",
+        "secFetchAbsent": true,
+        "status": "FAILED"
+      },
+      {
+        "code": "DEPENDENCY_UNAVAILABLE",
+        "command": "RESULT",
+        "http": 503,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "174e48b35c83a76b50556b8d487b58c2395aa9863a4e7f2ea4559b484921eddc",
+        "secFetchAbsent": true,
+        "status": "FAILED"
+      },
+      {
+        "code": "DATA_EXPIRED",
+        "command": "RESULT",
+        "http": 410,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "174e48b35c83a76b50556b8d487b58c2395aa9863a4e7f2ea4559b484921eddc",
+        "secFetchAbsent": true,
+        "status": "FAILED"
+      },
+      {
+        "code": "DATA_EXPIRED",
+        "command": "RESULT",
+        "http": 410,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "174e48b35c83a76b50556b8d487b58c2395aa9863a4e7f2ea4559b484921eddc",
+        "secFetchAbsent": true,
+        "status": "FAILED"
+      },
+      {
+        "code": "DATA_EXPIRED",
+        "command": "START",
+        "http": 410,
+        "originless": true,
+        "path": "/api/sign-document",
+        "publicCommandSha256": "02ede7292510d07ff65108fbe3ffb60783daa4de97229183b67caeaa047f7073",
+        "secFetchAbsent": true,
+        "status": "FAILED"
+      }
+    ],
+    "restartResultEqual": true,
+    "signingId": "sign_52d620dde86fcd542f85f677c1c07a543788390d4b2c3c8457c46a6ae0fec861",
+    "softwareInlineInputBytes": 16777216,
+    "sourceBytesPreserved": true,
+    "terminalReceiptReplay": true,
+    "typedHashExactMaterial": false,
+    "unknownCancelRemainedPending": false,
+    "usbLocalUiCount": 2,
+    "usbReadOnlyDiscoveryCount": 7,
+    "usbSoftwareCompletedKeyOperations": 1,
+    "usbSoftwareKeyOperations": 1
+  },
+  "agentCopyInventory": {
+    "manifestHash": "fab84fb0940c0d9a52184e86dbde7a4993702a8aa4b34604bcf1a2c1902c9eb4",
+    "pieces": 23,
+    "scope": "LOCAL_NATIVE_ENCRYPTED_COPIES_ONLY",
+    "unclassified": 0
+  },
+  "agentCopyLifecycle": {
+    "classification": "ISOLATED_SOFTWARE_ONLY",
+    "deleted": {
+      "copyGroup": "d520945d7d265bbb7eb6ccee19e295f7325d6669f100d4e7862e3e0c875c652c",
+      "deleteAfter": "2026-10-25T17:08:13.938596Z",
+      "holder": {
+        "agentKeyId": "ark_28d0f324b19b3d5de3a4a19ff319887bb5a2babaa649616c387e66b8ef96",
+        "customerPrincipalId": "customer-software",
+        "environment": "sandbox",
+        "integrationBindingId": "unified-software-signing",
+        "registeredAgentId": "agent_unified_software",
+        "storeRef": "TEST-isolated-agent-store",
+        "tenantId": "tenant_unified_9e9a079b0c2540e79241ef2de1c5e44c"
+      },
+      "manifestHash": "99f8758e2f16f122605eaefed883c07f4d047bd0bdb054b177a83da587422149",
+      "profile": {
+        "profileHash": "1cbdd210dd46ee79cc9f20616164c0e471a9f9aa615d08f208d502a3a1f89d9d",
+        "profileRef": "TEST-copy-profile"
+      },
+      "revision": 5,
+      "schemaVersion": "AgentCopyReference/v1",
+      "state": "DELETED",
+      "writer": {
+        "canonicalTransactionId": "btx_61d2c07e6d34aedb6f7cf53e0600d71d",
+        "tenantId": "tenant_unified_9e9a079b0c2540e79241ef2de1c5e44c",
+        "writerEpoch": 1,
+        "writerVersion": "canonical-r18/v1"
+      }
+    },
+    "deletedStartReplayRefused": true,
+    "finalInventory": {
+      "agentId": "agent_unified_software",
+      "manifestHash": "99f8758e2f16f122605eaefed883c07f4d047bd0bdb054b177a83da587422149",
+      "pieces": [],
+      "schemaVersion": "AgentEncryptedCopyInventory/v1",
+      "scope": "LOCAL_NATIVE_ENCRYPTED_COPIES_ONLY",
+      "scopeDigest": "12c1612509f7577bb5a72103bc089d855bd8689efcda175e771997918d3c45d0",
+      "tenantId": "tenant_unified_9e9a079b0c2540e79241ef2de1c5e44c",
+      "unclassified": 0
+    },
+    "frozen": {
+      "copyGroup": "d520945d7d265bbb7eb6ccee19e295f7325d6669f100d4e7862e3e0c875c652c",
+      "deleteAfter": "2026-10-25T17:08:13.938596Z",
+      "holder": {
+        "agentKeyId": "ark_28d0f324b19b3d5de3a4a19ff319887bb5a2babaa649616c387e66b8ef96",
+        "customerPrincipalId": "customer-software",
+        "environment": "sandbox",
+        "integrationBindingId": "unified-software-signing",
+        "registeredAgentId": "agent_unified_software",
+        "storeRef": "TEST-isolated-agent-store",
+        "tenantId": "tenant_unified_9e9a079b0c2540e79241ef2de1c5e44c"
+      },
+      "manifestHash": "fab84fb0940c0d9a52184e86dbde7a4993702a8aa4b34604bcf1a2c1902c9eb4",
+      "profile": {
+        "profileHash": "1cbdd210dd46ee79cc9f20616164c0e471a9f9aa615d08f208d502a3a1f89d9d",
+        "profileRef": "TEST-copy-profile"
+      },
+      "revision": 4,
+      "schemaVersion": "AgentCopyReference/v1",
+      "state": "FROZEN",
+      "writer": {
+        "canonicalTransactionId": "btx_61d2c07e6d34aedb6f7cf53e0600d71d",
+        "tenantId": "tenant_unified_9e9a079b0c2540e79241ef2de1c5e44c",
+        "writerEpoch": 1,
+        "writerVersion": "canonical-r18/v1"
+      }
+    },
+    "holdRefusedFence": true,
+    "lostDeleteAckRecoveredAfterRestart": true,
+    "otherRootPreserved": false,
+    "otherSigningId": null,
+    "physicalManagedFiles": 0,
+    "profile": {
+      "profileHash": "1cbdd210dd46ee79cc9f20616164c0e471a9f9aa615d08f208d502a3a1f89d9d",
+      "profileRef": "TEST-copy-profile"
+    },
+    "publicMaintenanceCommand": "RESULT",
+    "publicReadDroveMaintenance": true,
+    "publicResultDroveMaintenance": true,
+    "restore": {
+      "holds": 1,
+      "manifestHash": "112cf4139753605d6240393d23c64af4786cd8704f45af0e9056600537649f2d",
+      "releaseRequiredReconcile": true,
+      "staleRefused": true,
+      "tombstones": 1
+    },
+    "retained": {
+      "copyGroup": "d520945d7d265bbb7eb6ccee19e295f7325d6669f100d4e7862e3e0c875c652c",
+      "deleteAfter": "2026-10-25T17:08:13.938596Z",
+      "holder": {
+        "agentKeyId": "ark_28d0f324b19b3d5de3a4a19ff319887bb5a2babaa649616c387e66b8ef96",
+        "customerPrincipalId": "customer-software",
+        "environment": "sandbox",
+        "integrationBindingId": "unified-software-signing",
+        "registeredAgentId": "agent_unified_software",
+        "storeRef": "TEST-isolated-agent-store",
+        "tenantId": "tenant_unified_9e9a079b0c2540e79241ef2de1c5e44c"
+      },
+      "manifestHash": "fab84fb0940c0d9a52184e86dbde7a4993702a8aa4b34604bcf1a2c1902c9eb4",
+      "profile": {
+        "profileHash": "1cbdd210dd46ee79cc9f20616164c0e471a9f9aa615d08f208d502a3a1f89d9d",
+        "profileRef": "TEST-copy-profile"
+      },
+      "revision": 3,
+      "schemaVersion": "AgentCopyReference/v1",
+      "state": "RETAINED",
+      "writer": {
+        "canonicalTransactionId": "btx_61d2c07e6d34aedb6f7cf53e0600d71d",
+        "tenantId": "tenant_unified_9e9a079b0c2540e79241ef2de1c5e44c",
+        "writerEpoch": 1,
+        "writerVersion": "canonical-r18/v1"
+      }
+    },
+    "tamperRefused": true
+  },
+  "attempt_id": "opa_4e83c7fee2c662401045392909c81f45",
+  "businessTransactions": 1,
+  "canonical_transaction_id": "btx_61d2c07e6d34aedb6f7cf53e0600d71d",
+  "commitment_id": "ecm_342fb3e8af0ef2b7c83620e652ef3da9",
+  "currentPolicyRefusedBeforeAttemptOrEffect": true,
+  "independentPublicArtifactVerification": {
+    "coveredByteTamperRejected": true,
+    "exactCertificate": true,
+    "implementation": "BouncyCastle CMS verifier (independent from Node assembly)",
+    "selectedEssCertIdV2AndDetachedDer": true,
+    "signatureAndByteRangeDigest": true
+  },
+  "ledger_receipt_id": "lgr_8cffc64b964788557c9517f2788efea0",
+  "lostProviderResponse": false,
+  "nativeUsb": {
+    "classification": "ACTUAL_UNIVERSAL_CONNECTOR_WITH_ISOLATED_SOFTWARE_ADAPTER_NOT_REAL_USB_UAT",
+    "customerEndpoint": "/api/sign-document",
+    "httpSigningKeyOperations": 0,
+    "httpSigningSubmissions": 0,
+    "initialIssuerProducts": 0,
+    "issuerProducts": 1,
+    "legacyFlowExecutions": 0,
+    "localTestKeyOperations": 1,
+    "uiBeforeCurrentDispatch": true,
+    "unchangedPermitMaximumSeconds": 5
+  },
+  "operation_id": "nop_9e34f4c285baf8196c726512806373896ce54f82",
+  "osProcessRecovery": {
+    "enabled": true,
+    "publicOrigin": "http://127.0.0.1:59145",
+    "stablePublicOrigin": true,
+    "transitions": [
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 7508,
+        "oldPid": 9492,
+        "phase": "AFTER_CANONICAL_START",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 19300,
+        "oldPid": 7508,
+        "phase": "AFTER_SELECT_METHOD",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 30092,
+        "oldPid": 19300,
+        "phase": "AFTER_USB_RESULT_DURABLE_BEFORE_UPLOAD",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 31376,
+        "oldPid": 30092,
+        "phase": "AFTER_SELECT_CERTIFICATE",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 41980,
+        "oldPid": 31376,
+        "phase": "AFTER_PROVIDER_ACTION_BEFORE_RESULT",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 12600,
+        "oldPid": 41980,
+        "phase": "AFTER_ACCEPTED_RESULT",
+        "signal": "TerminateProcess"
+      },
+      {
+        "agentOrigin": "http://127.0.0.1:59145",
+        "newPid": 17004,
+        "oldPid": 12600,
+        "phase": "AFTER_UNLINK_BEFORE_OWNER_ACK",
+        "signal": "TerminateProcess"
+      }
+    ]
+  },
+  "preflightRefusedBeforeCopyOrRoot": true,
+  "readOnlyResultRecoveries": 0,
+  "usbKnownResultRecovery": {
+    "actualCohortDrain": true,
+    "actualDroppedUpload": 1,
+    "actualOsProcessDeath": true,
+    "actualProviderRouteStopped": true,
+    "classification": "ACTUAL_OS_PROCESS_DEATH_KNOWN_USB_RESULT_RECOVERY_TEST_PKI_NOT_REAL_DEVICE",
+    "completedKeyOperations": 1,
+    "expiredOriginalCommand": true,
+    "inFlightConnectionAborted": true,
+    "localUiCount": 2,
+    "noNewClientCommand": true,
+    "noNewDispatch": true,
+    "recoveryCommand": "STATUS",
+    "sameKeyOperations": 1
+  }
+}

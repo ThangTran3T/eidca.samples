@@ -1,0 +1,35 @@
+{
+  "at": "2026-10-25T17:09:05.476Z",
+  "controlledVectors": {
+    "classification": "CONTROLLED_OFFLINE_VECTORS_NOT_PROVIDER_UAT",
+    "passed": 6,
+    "failed": 0,
+    "privateKeysWritten": 0,
+    "runtimeAuthorityChanges": 0
+  },
+  "retainedHistoricalTestPdf": {
+    "status": "PASS",
+    "independentImplementation": "PDFBox3.0.8_BouncyCastle_JDK",
+    "artifactSha256": "6c87f0995acac4365762444fec3593aeeb9c7ad093aacffcc3b037c7123ac9ba",
+    "inputSha256": "e8f0f1d427c7f6ef1c48a2f7dd6b94f9b207a7a00595e8bd2cd8a1242a567194",
+    "certificateSha256": "f4ac204fbc8689abdd29268880deb4cb434110df663d7075e948d3ce0403ba85",
+    "profile": "PASS_SINGLE_SIGNATURE_PADES_B_B_PROFILE_CHECKS",
+    "pkixFullCrl": "PASS",
+    "signerOwnershipAndKeyUseAuthority": "NOT_EVALUATED",
+    "classification": "RETAINED_CLOSED_TEST_FILE_READ_ONLY_NOT_NEW_PROVIDER_UAT"
+  },
+  "wrongHistoricalInputNegative": "PASS_REJECTED_DIFFERENT_ORIGINAL",
+  "currentTenantCrypto": "NOT_EXECUTED",
+  "currentControlledUsbPdf": {
+    "status": "PASS",
+    "independentImplementation": "PDFBox3.0.8_BouncyCastle_JDK",
+    "artifactSha256": "c28ff7c0c22f1578db9b26f31e7d7e9e45602535ca5348ba2be7180c624b3254",
+    "inputSha256": "64b4a58e0ae551521834954c5d4cdcb7ba9502868617aa01f3c1bb5cc3b5fb88",
+    "certificateSha256": "b7e0a773612be645fccd6d99ec07ee058932a0cd8240d9a7ce5d409b96266e8a",
+    "profile": "PASS_SINGLE_SIGNATURE_PADES_B_B_PROFILE_CHECKS",
+    "pkixFullCrl": "PASS",
+    "signerOwnershipAndKeyUseAuthority": "NOT_EVALUATED",
+    "classification": "NEW_CONTROLLED_SOFTWARE_USB_FIXTURE_NOT_REAL_DEVICE_OR_PROVIDER_UAT",
+    "source": "EXTRACTED_FIRST_REVISION_HASH_MATCHED_TO_OWNER_FROZEN_SOURCE"
+  }
+}

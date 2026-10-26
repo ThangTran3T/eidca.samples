@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-25T17:11:45.201Z",
+  "classification": "CONTROLLED_POSTGRES_OWNER_DB_NOT_DEPLOYED_TENANT_UAT",
+  "roots": 1,
+  "sourceDigest": "64b4a58e0ae551521834954c5d4cdcb7ba9502868617aa01f3c1bb5cc3b5fb88",
+  "attempts": 1,
+  "verifiedKeyResults": 1,
+  "acceptedResults": 1,
+  "committedLedgerResults": 1,
+  "sourceEvidence": "SIGNED_PDF_FIRST_REVISION_SHA256_MATCHED_TO_ACTUAL_OWNER_FROZEN_SOURCE",
+  "localSoftwareAdapterKeyActions": 1,
+  "billing": "NOT_RUN_IN_FIVE_OWNER_HARNESS",
+  "realProviderCalls": 0
+}

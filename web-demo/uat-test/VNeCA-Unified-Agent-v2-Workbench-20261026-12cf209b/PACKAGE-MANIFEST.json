@@ -1,0 +1,240 @@
+{
+    "verifier":  {
+                     "sha512":  "768847238f683568507bf73570a2b6fedcbe58b25c7b4f97fba536ba110b290fe96ba065aed58629d41fb94857d76bc1978c2f31d294b553c69f287f71ee9600",
+                     "path":  "verify/pdfbox-app-3.0.8.jar",
+                     "source":  "https://repo.maven.apache.org/maven2/org/apache/pdfbox/pdfbox-app/3.0.8/pdfbox-app-3.0.8.jar"
+                 },
+    "signingStarts":  0,
+    "files":  [
+                  {
+                      "path":  "collect-cardinality.mjs",
+                      "sha256":  "7154084c620a072608ec7395b15b8c17ad3dc9531fee3fd40db527a93ebb4689",
+                      "bytes":  3796
+                  },
+                  {
+                      "path":  "CONTRACT-RECOVERY.md",
+                      "sha256":  "86a8abe3c396bddbccd1a7d6705fce5636eb8d1063c63dd0ce4eae66fdb44e4a",
+                      "bytes":  6234
+                  },
+                  {
+                      "path":  "customer-post.js",
+                      "sha256":  "292fb57278a4c918c20a37d2c75094628594b6d0fc63f9b09ef1daeb2469bfbe",
+                      "bytes":  2317
+                  },
+                  {
+                      "path":  "customer-pre.js",
+                      "sha256":  "34bf75f6ac79b973cfbecc4b17fe21640512c4639a7601299bfa50825ffa4661",
+                      "bytes":  5733
+                  },
+                  {
+                      "path":  "Customer-Signing.postman_collection.json",
+                      "sha256":  "9c2e9ec7e526f7c4c887db7e8e577214920c88b6008a8d32af5e9497de0c4566",
+                      "bytes":  291316
+                  },
+                  {
+                      "path":  "evidence/cardinality-no-root-probe.json",
+                      "sha256":  "d18a9d84f56255357a0b474778821040b2e85d6ff6cf4ce5efc54db33878699b",
+                      "bytes":  524
+                  },
+                  {
+                      "path":  "evidence/controlled-owner-cardinality.json",
+                      "sha256":  "1fd4117ada3bf8beacaa598c5b7bbebfe8c1135bd21d71fd4233126195b9f331",
+                      "bytes":  519
+                  },
+                  {
+                      "path":  "evidence/independent-crypto.json",
+                      "sha256":  "a77f6d599af9bdb4e9ffe8f48c2e83c047d7f646dcc1815bbaee5adfd93fe6a9",
+                      "bytes":  1684
+                  },
+                  {
+                      "path":  "evidence/local-artifact.json",
+                      "sha256":  "71249a37f9305eaf5344ef344beb66520d67b3dd2306cee62bdf91f64c757914",
+                      "bytes":  332
+                  },
+                  {
+                      "path":  "evidence/native-usb-recovery.json",
+                      "sha256":  "86f81a2ec3993e058a5f12caa2fed93efb4ce4742c23bd0b1003ad11772e8379",
+                      "bytes":  19495
+                  },
+                  {
+                      "path":  "evidence/provider-mapping-metadata.json",
+                      "sha256":  "63fd1c7fee5f1c2c16d14c0f743892e8aabdd2a7366a992d7925611fa4821a4a",
+                      "bytes":  6510
+                  },
+                  {
+                      "path":  "evidence/runtime-preflight.json",
+                      "sha256":  "45194d7e8c83e3d1f1d0d76f443062061c7e93c98fcc64d03a5a76b3e847b502",
+                      "bytes":  11032
+                  },
+                  {
+                      "path":  "evidence/test-results.json",
+                      "sha256":  "88edf18dd9bd957e8bb5d65f01cc39576e3d06d42433c10e8337f9110a8ca941",
+                      "bytes":  3271
+                  },
+                  {
+                      "path":  "generate.mjs",
+                      "sha256":  "725a8ed9e3e94748c257aa87078ad2935164d26348f89db909004171f273c2c5",
+                      "bytes":  20849
+                  },
+                  {
+                      "path":  "Local.postman_environment.json",
+                      "sha256":  "515006dbc71b6a620dae3f363fe0d89fd4bc1504a0cb52aa5d7b722f549c46e3",
+                      "bytes":  63429
+                  },
+                  {
+                      "path":  "OPERATOR-GUIDE.md",
+                      "sha256":  "d0be72934ebd55459000282045847605a8dcfab17b87f6c5e6693a043fb41f3e",
+                      "bytes":  5963
+                  },
+                  {
+                      "path":  "Operator-Setup-Preflight.postman_collection.json",
+                      "sha256":  "f7605c85931fa6e042230f56193fcba3fdb5378c6f22750735714e982f132231",
+                      "bytes":  36683
+                  },
+                  {
+                      "path":  "pack.ps1",
+                      "sha256":  "64960b2c5dc7596869bf8c027753bc7aca5a85aaeacd66c7ac65f8cce2f6735b",
+                      "bytes":  4156
+                  },
+                  {
+                      "path":  "package.json",
+                      "sha256":  "bf4eafb04d0d6a3e1ff7113d11d5d8fec83be91f831d435aa94d3ddb3ea33f6c",
+                      "bytes":  182
+                  },
+                  {
+                      "path":  "package-lock.json",
+                      "sha256":  "3fc25c1c3b567bdc503979d684cd00a5d85abe05f044a2ffa1b72d8fa900d234",
+                      "bytes":  668
+                  },
+                  {
+                      "path":  "prepare-private.mjs",
+                      "sha256":  "25d2a2b9feb86609f3704fabfc66354a738fc2305f7cff1ce2578a40e3e4e140",
+                      "bytes":  6423
+                  },
+                  {
+                      "path":  "QUICK-START-VI.md",
+                      "sha256":  "5bcad4f7cc3afd78a93b2852c714ead94c7a6ea7b76a90eea20a8d9b13f21c71",
+                      "bytes":  11717
+                  },
+                  {
+                      "path":  "READINESS-MATRIX.md",
+                      "sha256":  "91bf8b65191409d437a09b324d83d8fbe38b5138747d2c8929fdc35580beb8dd",
+                      "bytes":  6253
+                  },
+                  {
+                      "path":  "README.md",
+                      "sha256":  "a28ad5a71355ca28839d8db5579510456c9434981ddc96255f2a8bd563d6efc6",
+                      "bytes":  1926
+                  },
+                  {
+                      "path":  "samples/inputs.json",
+                      "sha256":  "63b002846fd2fb8c81fca5a8afc62d314fc600fb6806f103755522c1fc88830e",
+                      "bytes":  57819
+                  },
+                  {
+                      "path":  "samples/sample.bin",
+                      "sha256":  "a88429da79830a975fbb3e51b357199b98adb429684454e9529eeac2b9212965",
+                      "bytes":  34
+                  },
+                  {
+                      "path":  "samples/sample.pdf",
+                      "sha256":  "68fcf14acc01f3eb8ac32c5317213ae24f261e61f7d5fa6bd62b91b35d00786f",
+                      "bytes":  42364
+                  },
+                  {
+                      "path":  "samples/sample.xml",
+                      "sha256":  "b43350f7a95409791bbd72ddb721ea3b53732d3e92200bceef87db6a18274cd4",
+                      "bytes":  140
+                  },
+                  {
+                      "path":  "samples/START-APP_CA_REMOTE_SIGNING.template.json",
+                      "sha256":  "e15fd809587d983a4fe050fd017a7ac6f937dfd03adbe81e673f579b4bd24e93",
+                      "bytes":  57056
+                  },
+                  {
+                      "path":  "samples/START-CCCD_NFC.template.json",
+                      "sha256":  "53d7919791f836c59bd7bfa1afac766a76020c32ba8b975eca4cb2beb3f40cb6",
+                      "bytes":  57043
+                  },
+                  {
+                      "path":  "samples/START-USB_TOKEN.template.json",
+                      "sha256":  "94b9510a2198821d46ca07ed56fa5e9e2bcadd52e1386970dcc941dd2d022456",
+                      "bytes":  57044
+                  },
+                  {
+                      "path":  "samples/START-VNEID.template.json",
+                      "sha256":  "1bb1f1256e8de37b6f76fb3c2eb722494ce47de74758b38a6f7ea2e2bdb47870",
+                      "bytes":  57040
+                  },
+                  {
+                      "path":  "sandbox-common.js",
+                      "sha256":  "69591153a302c0ce07111d291ddb7c475e24ff6a06d75556fa1b67a2bee3f579",
+                      "bytes":  2401
+                  },
+                  {
+                      "path":  "save-result.mjs",
+                      "sha256":  "7b449fa655894f972838db574b86d42333710ae34ef406942096ed0a9943c5ce",
+                      "bytes":  1936
+                  },
+                  {
+                      "path":  "Server.postman_environment.json",
+                      "sha256":  "8b8ca36e5018b48872f33d87076dde0544fbeef10155dc0dbee2e835a6c4cece",
+                      "bytes":  63045
+                  },
+                  {
+                      "path":  "session-state.cjs",
+                      "sha256":  "9099985279e6a73248d4f4d4815a521adb95c4c2e784489867569830f24f111c",
+                      "bytes":  13353
+                  },
+                  {
+                      "path":  "tests/collections.test.cjs",
+                      "sha256":  "d51f87f4c802aac0f459a4e8cf708fec7d242a0642a994eb0572245bc90d91e9",
+                      "bytes":  6708
+                  },
+                  {
+                      "path":  "tests/session-state.test.cjs",
+                      "sha256":  "f809cd4a6597eed5edf45c624a077a2ff07b889f0838ac2b0c95edda419f788a",
+                      "bytes":  10027
+                  },
+                  {
+                      "path":  "tests/VerifierVectors.java",
+                      "sha256":  "4403d3c160d30c726cb1dc9be2fe6558373015ac00536efd854e3a871913fdcd",
+                      "bytes":  6157
+                  },
+                  {
+                      "path":  "verify/FixtureFiles.java",
+                      "sha256":  "c20012b38bb17929a7e25d0d80974b4cc84eedca27be3dea1c7579a5c72db950",
+                      "bytes":  173
+                  },
+                  {
+                      "path":  "verify/PublicPdfVerification.java",
+                      "sha256":  "cd77a5d27eb36ebe2a3f92c486e7e8d6df082ffa61a8ea93ab8e651f5e1e8c3e",
+                      "bytes":  6413
+                  },
+                  {
+                      "path":  "verify/VerifyResult.java",
+                      "sha256":  "98b9fd1ed38de08833bb718906eb544e23e57cc08361cc8591b6d7d36237f8e4",
+                      "bytes":  10113
+                  },
+                  {
+                      "path":  "verify-material.mjs",
+                      "sha256":  "f4257c430dc59fae237a9c6299294c26c90d0a811410185b5387e5fc83420ad8",
+                      "bytes":  1956
+                  },
+                  {
+                      "path":  "VERIFY-RESULT.md",
+                      "sha256":  "8060b215ec4458aa32660286fb82e50b7c9e9e86705aa17db8fd943c58e542be",
+                      "bytes":  3675
+                  },
+                  {
+                      "path":  "verify-result.ps1",
+                      "sha256":  "3512ae3424abb31abf966314ed6d702e2cf176bfb9c1a8cbbb5c457660c8dec3",
+                      "bytes":  2324
+                  }
+              ],
+    "secretsIncluded":  0,
+    "generatedAt":  "2026-10-25T17:17:13.1218227+00:00",
+    "realProviderUat":  "NOT_EXECUTED",
+    "schemaVersion":  "UnifiedWorkbenchPackage/v1",
+    "sourceRevision":  "12cf209b474601f02c139faf3210fee7dc9eaa52"
+}

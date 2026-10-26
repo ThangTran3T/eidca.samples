@@ -1,0 +1,301 @@
+{
+  "schemaVersion": "UnifiedWorkbenchRuntimeEvidence/v1",
+  "at": "2026-10-25T17:07:16.499Z",
+  "sourceRevision": "47e87f2fac01fca56443b0ed098bed229f15ab0f",
+  "tenant": "ten_2990dee8-2d4c-4c27-b542-af46ebf5edc3",
+  "installationEnvironment": "production",
+  "providerEndpoint": "https://api-sandbox.jth.vn",
+  "local": {
+    "pid": 30968,
+    "sourceRevision": "47e87f2fac01fca56443b0ed098bed229f15ab0f",
+    "dllSha256": "b67a3404a477adab0c5202adb3f1df4008e4f4e31640bf8da045f8b092e0104e",
+    "environment": "production",
+    "binding": "ky-tai-lieu-dien-tu-chung",
+    "tenant": "ten_2990dee8-2d4c-4c27-b542-af46ebf5edc3",
+    "allowDispatch": false,
+    "normalWindowsTls": true,
+    "localJournalPreserved": true,
+    "journalFiles": 4,
+    "grantProfileKeyAndSettingsUnchanged": true
+  },
+  "localHealth": {
+    "http": 200,
+    "status": "running",
+    "runtime": "EIDCA_DESKTOP_LOCAL_AGENT"
+  },
+  "operator": {
+    "username": "poc.ui.platform",
+    "role": "PLATFORM_ADMIN",
+    "realLoginHttp": 201,
+    "preflightHttp": 200,
+    "preflight": {
+      "owners": {
+        "tenant": {
+          "gates": {
+            "agent_authentication_key": {
+              "code": "EXACT_CURRENT_REGISTERED_KEY_REQUIRED",
+              "status": "BLOCKED_AUTHORITY"
+            },
+            "integration_profile": {
+              "code": "EXACT_PROFILE_PUBLICATION",
+              "status": "PASS"
+            },
+            "policy_publication": {
+              "code": "PUBLICATION_PRESENCE_IS_NOT_RUNTIME_ALLOW",
+              "status": "PASS"
+            },
+            "agent_registration": {
+              "code": "EXACT_CURRENT_REGISTRATION_REQUIRED",
+              "status": "BLOCKED_AUTHORITY"
+            },
+            "caller_grant": {
+              "code": "CALLER_ACCESS_ONLY_NOT_SIGNING_PERMISSION",
+              "status": "BLOCKED_AUTHORITY"
+            },
+            "current_policy_allow": {
+              "code": "RUNTIME_INTENT_AND_CURRENT_POLICY_CHECK_REQUIRED",
+              "status": "NOT_CHECKED"
+            }
+          },
+          "schemaVersion": "AgentTenantPreflight/v1",
+          "binding": "ky-tai-lieu-dien-tu-chung",
+          "tenantId": "ten_2990dee8-2d4c-4c27-b542-af46ebf5edc3",
+          "writes": 0,
+          "environment": "production",
+          "metadata": {
+            "authenticationKey": {
+              "fingerprint": "a436294908cd077eb4d6dc348ab31c4894218c6feca32abe38de460e148da646",
+              "expiresAt": "2026-10-25 15:04:09.384",
+              "keyId": "ark_a436294908cd077eb4d6dc348ab31c4894218c6feca32abe38de460e148d"
+            },
+            "profile": {
+              "revision": "pub_21d495605492@1:agent:ark_a436294908cd077eb4d6dc348ab31c4894218c6feca32abe38de460e148d",
+              "hash": "0ad1bcd028493a58bf7eacc603181a4e1b7e93c3c25062762ba8fa6d0f2d91c3",
+              "businessFlowVersionId": "bfv_eb8a38c803cc4e5ca00c952d4c1a4e97",
+              "businessFlowHash": "de9634554a411ccb3f79fe00736abf0a829f969fcfc601e6a0d4849c7534a091",
+              "providerFlowRevision": "flowver_b22ea0e7c849",
+              "providerFlowHash": "0763a5381d9b3520e07169e115b980b24a85012d67cac5c5e90e6a5f21c64473",
+              "mode": "DOCUMENT_MODE",
+              "signatureProfile": "PAdES-B-B"
+            },
+            "policy": {
+              "revision": "epb_35169252bd786db13b8add9aaaf8f16a",
+              "hash": "fc2f000422eb4c647f24f405a6d99686d4f637e6bfaa6f98285a09395ce895cd"
+            },
+            "caller": {
+              "expiresAt": "2026-10-25T15:04:09.384Z",
+              "grantId": "aig_63faf1d5954f3d3211016d80a3d64be2",
+              "revoked": false,
+              "allowedActions": [
+                "START",
+                "CONTINUE",
+                "STATUS",
+                "CANCEL",
+                "RESULT"
+              ]
+            }
+          },
+          "checkedAt": "2026-10-25T17:07:13.648143273Z"
+        },
+        "signing": {
+          "checkedAt": "2026-10-25T17:07:13.733017007Z",
+          "gates": {
+            "activation_manifest": {
+              "status": "BLOCKED_CONFIG",
+              "code": "VALIDATED_EXACT_ACTIVE_MANIFEST_REQUIRED"
+            },
+            "admission_cohort": {
+              "status": "BLOCKED_CONFIG",
+              "code": "PINNED_NONZERO_ADMISSION_COHORT_REQUIRED"
+            },
+            "verifier_authority": {
+              "status": "BLOCKED_AUTHORITY",
+              "code": "CURRENT_SIGNED_VERIFIER_SCOPE_UNAVAILABLE"
+            },
+            "activation_control": {
+              "status": "BLOCKED_CONFIG",
+              "code": "CONTROL_MAY_CLOSE_AFTER_VALID_ACTIVATION_NOT_SIGNING_AUTHORITY"
+            },
+            "dispatch": {
+              "status": "PASS",
+              "code": "FEATURE_FLAG_NOT_AUTHORITY"
+            },
+            "signer_key_ownership": {
+              "status": "NOT_CHECKED",
+              "code": "EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED"
+            },
+            "signing_use_authority": {
+              "status": "NOT_CHECKED",
+              "code": "EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED"
+            },
+            "trust_revocation": {
+              "status": "NOT_CHECKED",
+              "code": "EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED"
+            },
+            "provider_credential_scope": {
+              "status": "NOT_CHECKED",
+              "code": "EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED"
+            }
+          },
+          "schemaVersion": "AgentSigningPreflight/v1",
+          "binding": "ky-tai-lieu-dien-tu-chung",
+          "tenantId": "ten_2990dee8-2d4c-4c27-b542-af46ebf5edc3",
+          "environment": "production",
+          "starts": 0,
+          "keyActions": 0
+        }
+      },
+      "transport": {
+        "tenant": {
+          "code": "OWNER_METADATA_READ_NOT_SIGNING_PASS",
+          "status": "PASS"
+        },
+        "signing": {
+          "code": "OWNER_METADATA_READ_NOT_SIGNING_PASS",
+          "status": "PASS"
+        }
+      },
+      "checkedAt": "2026-10-25T17:07:13.745268462Z",
+      "signingActions": 0,
+      "binding": "ky-tai-lieu-dien-tu-chung",
+      "tenantId": "ten_2990dee8-2d4c-4c27-b542-af46ebf5edc3",
+      "overall": "BLOCKED_AUTHORITY",
+      "schemaVersion": "AgentOperatorPreflight/v1",
+      "environment": "production"
+    }
+  },
+  "readOnlyPublicChecks": {
+    "localExpiredCaller": {
+      "http": 403,
+      "api_version": "2.0",
+      "request_id": "80a9c576-219b-4f0f-8bae-b8c5be2de46d",
+      "status": "FAILED",
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "The Local Agent caller registration is inactive.",
+        "recovery": "NONE"
+      }
+    },
+    "localUnauthenticated": {
+      "http": 401,
+      "status": "FAILED",
+      "error": {
+        "code": "UNAUTHENTICATED",
+        "message": "Signing request could not be fulfilled. See the error code.",
+        "recovery": "NONE"
+      }
+    },
+    "serverHealthHttp": 200,
+    "serverUnauthenticated": {
+      "http": 401,
+      "status": "FAILED",
+      "error": {
+        "code": "UNAUTHENTICATED",
+        "message": "Signing request could not be fulfilled. See the error code.",
+        "recovery": "NONE"
+      }
+    }
+  },
+  "nativePlan": {
+    "http": 200,
+    "schemaVersion": "NativeProviderReadiness/v1",
+    "providerId": "prv_eidca_hash",
+    "environment": "production",
+    "contract": "NativeEidcaHashAction/v1",
+    "flowRevision": "flowver_b22ea0e7c849",
+    "flowHash": "0763a5381d9b3520e07169e115b980b24a85012d67cac5c5e90e6a5f21c64473",
+    "planReady": true,
+    "collector": {
+      "schemaVersion": "NativeClientConnector/v1",
+      "connectorId": "local-eidca-collector-v1",
+      "connectorHash": "4f9aee376af509778b6b816d2e3d4a7f3a342a2401edae424f26e92b696b2f53",
+      "actionCode": "eidca.collect-aa/v1"
+    },
+    "methodCode": "CCCD_NFC",
+    "flowId": "flow_eidca_hash_personal_sign",
+    "providerCalls": 0,
+    "credentialReads": 0,
+    "configurationWrites": 0,
+    "signingAuthority": "NOT_EVALUATED"
+  },
+  "server": {
+    "sourceRevision": "1a29f3318f24ecb2fa5bf1dd93b6d6a282688c0f",
+    "imageId": "sha256:b59ad116134ee02552787b12111abe7c3f14062c2bab0741d85bab3944996866",
+    "installationForFixedTenant": "NOT_PROVISIONED_CLOSED_SOFTWARE_COHORT_UNCHANGED"
+  },
+  "backend": [
+    {
+      "service": "tenant-service",
+      "container": "vneca-unified-test-tenant-service-1",
+      "imageId": "sha256:3969fc5f0e8a4c72799386e85085184fc7cdee953e26d94c6b8923433fc5cce8",
+      "sourceRevision": "1b672feda7798e6fad8b0c84a32505a93fc90fd8",
+      "jarSha256": "c8a558571e6c504bcf3d6cb467f0d66ec386257d7ee7ded3ac3afa7bb2271be4",
+      "health": "healthy",
+      "rollbackContainer": "vneca-unified-test-tenant-service-1-rollback-registry-1b672fed",
+      "environmentUnchanged": true,
+      "mountsUnchanged": true
+    },
+    {
+      "service": "signing-service",
+      "container": "vneca-unified-test-signing-service-1",
+      "imageId": "sha256:86ad0434a5c61807b42ba22703b2c408a5727bfab280ee7abd5c66b156916127",
+      "sourceRevision": "1b672feda7798e6fad8b0c84a32505a93fc90fd8",
+      "jarSha256": "e0c44856df377ef26c1da4f613cc5a8dd65bc54243bc76577bee2671ec7250e3",
+      "health": "healthy",
+      "rollbackContainer": "vneca-unified-test-signing-service-1-rollback-registry-1b672fed",
+      "environmentUnchanged": true,
+      "mountsUnchanged": true
+    },
+    {
+      "service": "admin-service",
+      "container": "vneca-unified-test-admin-service-1",
+      "imageId": "sha256:1ab284d37aa2b1e3af461b7dce959bd5a21196e37d6433bcfcddeacfcafc7792",
+      "sourceRevision": "1b672feda7798e6fad8b0c84a32505a93fc90fd8",
+      "jarSha256": "737458c12fa1e0d7803407a0e5c4b082d4b49e6d379e501ae4dbe37fb5e1d698",
+      "health": "healthy",
+      "rollbackContainer": "vneca-unified-test-admin-service-1-rollback-registry-1b672fed",
+      "environmentUnchanged": true,
+      "mountsUnchanged": true
+    }
+  ],
+  "before": {
+    "roots": 14,
+    "attempts": 10,
+    "providerExecutions": 8,
+    "usage": 9
+  },
+  "after": {
+    "roots": 14,
+    "attempts": 10,
+    "providerExecutions": 8,
+    "usage": 9
+  },
+  "countsUnchanged": true,
+  "realProviderUat": "NOT_EXECUTED",
+  "signingStarts": 0,
+  "providerChallengeCalls": 0,
+  "authorityChanges": 0,
+  "credentialMetadata": {
+    "source": "READ_ONLY_EXACT_PROVIDER_REGISTRY_METADATA_NOT_SECRET_RESOLVE",
+    "providerId": "prv_eidca_hash",
+    "records": [
+      {
+        "credentialId": "cred_prv_eidca_hash",
+        "environment": "production",
+        "authType": "API_KEY",
+        "reference": "vault://secret/data/product/eidca#x-api-key",
+        "keyVersion": "v1",
+        "status": "ACTIVE"
+      },
+      {
+        "credentialId": "cred_e34cb43a83c2",
+        "environment": "sandbox",
+        "authType": "API_KEY",
+        "reference": "vault://secret/data/product/eidca/default#x-api-key",
+        "keyVersion": null,
+        "status": "ACTIVE"
+      }
+    ],
+    "sandboxQualification": "NOT_CHECKED_CURRENT_OWNER_EVIDENCE_REQUIRED"
+  }
+}

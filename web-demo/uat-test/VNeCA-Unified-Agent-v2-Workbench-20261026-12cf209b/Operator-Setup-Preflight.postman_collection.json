@@ -1,0 +1,595 @@
+{
+  "info": {
+    "name": "VNeCA Unified v2 — Operator Setup & Preflight",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Separate real Platform operator login/RBAC. No admin credential becomes a customer bearer. Read current scope; NOT_CHECKED is not PASS. Write requests are manually armed, require owner-prepared exact JSON/PoP and are never executed by the supplied scripts. Internal-only activation/signing-use/verifier workflows remain CLI/owner steps, not fictitious public APIs."
+  },
+  "item": [
+    {
+      "name": "00 Authentication — real operator only",
+      "item": [
+        {
+          "name": "00 LOGIN — credentials from Local Vault",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='LOGIN';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='00 LOGIN — credentials from Local Vault'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);pm.test('Real operator login HTTP201',()=>pm.expect(pm.response.code).to.eql(201));if(pm.response.code!==201)return;const j=pm.response.json(),token=j.data?.access_token;if(!token)throw Error('No real login token');await pm.vault.set(pm.environment.get('operator_jwt_vault_key'),token);})().catch(()=>{pm.test('Operator token remains private',()=>{throw Error('Login/Vault failed');});});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Load actual existing operator credentials privately. Token stays in operator Vault, separate from customer caller."
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 Read-only operator gates",
+      "item": [
+        {
+          "name": "01 Complete scoped preflight",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='READ';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='01 Complete scoped preflight'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test('Operator HTTP request succeeded; not signing PASS',()=>pm.expect(pm.response.code).to.be.within(200,299));if(pm.response.code===200&&pm.response.json().schemaVersion==='AgentOperatorPreflight/v1'){const j=pm.response.json();pm.environment.set('operator_preflight_json',JSON.stringify(j));pm.environment.set('operator_preflight_status',j.overall==='PASS'?'PASS':'BLOCKED');}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/admin/tenants/{{tenant_id}}/agent-preflight?binding={{installation_binding}}&environment={{installation_environment}}&agent={{agent_id}}&agentVersion={{agent_version}}&key={{authentication_key_id}}&profile={{profile_revision}}&policy={{policy_revision}}&grant={{caller_grant_id}}&policyHash={{policy_hash}}&artifact={{verifier_artifact}}&mode={{finalization_mode}}&signatureProfile={{owner_signature_profile}}&verifierRevision={{verifier_revision}}",
+            "description": "Reads exact owner metadata; writes no grants/activation/signing transaction. Missing issuer/key-use/trust remain NOT_CHECKED. Read transport PASS alone is not readiness."
+          }
+        },
+        {
+          "name": "02 Method / Provider assignments",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='READ';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='02 Method / Provider assignments'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test('Operator HTTP request succeeded; not signing PASS',()=>pm.expect(pm.response.code).to.be.within(200,299));if(pm.response.code===200&&pm.response.json().schemaVersion==='AgentOperatorPreflight/v1'){const j=pm.response.json();pm.environment.set('operator_preflight_json',JSON.stringify(j));pm.environment.set('operator_preflight_status',j.overall==='PASS'?'PASS':'BLOCKED');}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/admin/tenants/{{tenant_id}}/method-providers",
+            "description": "Inspect exact Method/environment/Provider/native pins, not display labels."
+          }
+        },
+        {
+          "name": "03 Provider APIs effective metadata",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='READ';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='03 Provider APIs effective metadata'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test('Operator HTTP request succeeded; not signing PASS',()=>pm.expect(pm.response.code).to.be.within(200,299));if(pm.response.code===200&&pm.response.json().schemaVersion==='AgentOperatorPreflight/v1'){const j=pm.response.json();pm.environment.set('operator_preflight_json',JSON.stringify(j));pm.environment.set('operator_preflight_status',j.overall==='PASS'?'PASS':'BLOCKED');}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/admin/providers/{{operator_provider_id}}/apis",
+            "description": "Check origin, API environment, auth mechanism and credential reference. Do not export raw responses that may include configured sensitive fields."
+          }
+        },
+        {
+          "name": "04 Provider flow revisions",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='READ';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='04 Provider flow revisions'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test('Operator HTTP request succeeded; not signing PASS',()=>pm.expect(pm.response.code).to.be.within(200,299));if(pm.response.code===200&&pm.response.json().schemaVersion==='AgentOperatorPreflight/v1'){const j=pm.response.json();pm.environment.set('operator_preflight_json',JSON.stringify(j));pm.environment.set('operator_preflight_status',j.overall==='PASS'?'PASS':'BLOCKED');}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/admin/providers/{{operator_provider_id}}/flows",
+            "description": "Read published native recipe, do not republish Owner configuration."
+          }
+        },
+        {
+          "name": "05 Native Provider plan dry-read",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='READ';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='05 Native Provider plan dry-read'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test('Operator HTTP request succeeded; not signing PASS',()=>pm.expect(pm.response.code).to.be.within(200,299));if(pm.response.code===200&&pm.response.json().schemaVersion==='AgentOperatorPreflight/v1'){const j=pm.response.json();pm.environment.set('operator_preflight_json',JSON.stringify(j));pm.environment.set('operator_preflight_status',j.overall==='PASS'?'PASS':'BLOCKED');}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/admin/tenants/{{tenant_id}}/native-provider-readiness?provider={{operator_provider_id}}&environment={{installation_environment}}&revision={{operator_provider_revision}}&hash={{operator_provider_hash}}",
+            "description": "Existing source-confirmed read-only native plan check. Does not call challenge/submit, resolve a signing credential or authorize a signer."
+          }
+        },
+        {
+          "name": "06 Transaction list / reconciliation evidence",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='READ';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='06 Transaction list / reconciliation evidence'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test('Operator HTTP request succeeded; not signing PASS',()=>pm.expect(pm.response.code).to.be.within(200,299));if(pm.response.code===200&&pm.response.json().schemaVersion==='AgentOperatorPreflight/v1'){const j=pm.response.json();pm.environment.set('operator_preflight_json',JSON.stringify(j));pm.environment.set('operator_preflight_status',j.overall==='PASS'?'PASS':'BLOCKED');}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/admin/transactions?tenantId={{tenant_id}}&transactionId={{canonical_transaction_id}}&limit=25",
+            "description": "Existing read API only. Relate public signing_id to owner metadata via authorized operator workflow; an empty list is not proof of zero key actions or Billing. Use scoped cardinality helper/runbook."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Agent transport / connection — read-only, no admin bearer",
+      "item": [
+        {
+          "name": "Local normal TLS health",
+          "request": {
+            "method": "GET",
+            "url": "https://localhost:17889/api/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "description": "Existing read-only Agent endpoint. No admin/customer bearer forwarded. HTTP success/transport is not caller, signing-use, verifier or activation PASS. Configured connection may fail while access is expired; inspect scoped owner preflight."
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.request.headers.remove(\"Authorization\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test(\"Read-only transport HTTP succeeded, not signing PASS\",()=>pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Local configured Platform connection — no signing action",
+          "request": {
+            "method": "GET",
+            "url": "https://localhost:17889/api/connection/platform",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "description": "Existing read-only Agent endpoint. No admin/customer bearer forwarded. HTTP success/transport is not caller, signing-use, verifier or activation PASS. Configured connection may fail while access is expired; inspect scoped owner preflight."
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.request.headers.remove(\"Authorization\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test(\"Read-only transport HTTP succeeded, not signing PASS\",()=>pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Server current health — not a tenant installation",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:29080/health",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "description": "Existing read-only Agent endpoint. No admin/customer bearer forwarded. HTTP success/transport is not caller, signing-use, verifier or activation PASS. Configured connection may fail while access is expired; inspect scoped owner preflight."
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.request.headers.remove(\"Authorization\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test(\"Read-only transport HTTP succeeded, not signing PASS\",()=>pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "90 MANUAL WRITES — never Run / never preflight",
+      "item": [
+        {
+          "name": "PROVISION_EXISTING_AGENT",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='WRITE';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='PROVISION_EXISTING_AGENT'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test('Operator HTTP request succeeded; not signing PASS',()=>pm.expect(pm.response.code).to.be.within(200,299));if(pm.response.code===200&&pm.response.json().schemaVersion==='AgentOperatorPreflight/v1'){const j=pm.response.json();pm.environment.set('operator_preflight_json',JSON.stringify(j));pm.environment.set('operator_preflight_status',j.overall==='PASS'?'PASS':'BLOCKED');}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Reason-Code",
+                "value": "MANUAL_OPERATOR_UNIFIED_WORKBENCH"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/admin/tenants/{{tenant_id}}/agent-installations",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Real existing managed-installation workflow. Requires owner-approved scope, existing customer/parent, exact Agent RSA public key + real proof-of-possession. Prepare with existing operator CLI; no private key in JSON/export. operator_once must equal request name."
+          }
+        },
+        {
+          "name": "PUBLISH_NATIVE_BINDING",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='WRITE';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='PUBLISH_NATIVE_BINDING'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test('Operator HTTP request succeeded; not signing PASS',()=>pm.expect(pm.response.code).to.be.within(200,299));if(pm.response.code===200&&pm.response.json().schemaVersion==='AgentOperatorPreflight/v1'){const j=pm.response.json();pm.environment.set('operator_preflight_json',JSON.stringify(j));pm.environment.set('operator_preflight_status',j.overall==='PASS'?'PASS':'BLOCKED');}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Reason-Code",
+                "value": "MANUAL_OPERATOR_UNIFIED_WORKBENCH"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/admin/tenants/{{tenant_id}}/native-bindings/{{operator_flow_id}}:publish",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Real existing immutable publish workflow with expected publication/revision and exact Provider plan pins. Review Owner configuration diff first; no automatic endpoint/reference rewrite."
+          }
+        },
+        {
+          "name": "PUBLISH_COPY_PROFILE",
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async()=>{pm.execution.setNextRequest(null);if(pm.environment.get('platform_origin')!=='https://127.0.0.1:29443'){pm.execution.skipRequest();throw Error('Wrong measured TEST control plane');}pm.variables.set('platform_origin',pm.environment.get('platform_origin'));const mode='WRITE';if(mode==='LOGIN'){const username=await pm.vault.get(pm.environment.get('operator_username_vault_key')),password=await pm.vault.get(pm.environment.get('operator_password_vault_key'));pm.request.body.update(JSON.stringify({username,password}));}else{if(mode==='WRITE'){if(pm.environment.get('operator_once')!=='PUBLISH_COPY_PROFILE'){pm.execution.skipRequest();throw Error('Exact manual operator_once required; no automatic provisioning/activation');}pm.environment.unset('operator_once');const raw=pm.environment.get('operator_prepared_json');if(!raw||!JSON.parse(raw)){pm.execution.skipRequest();throw Error('Real workflow prepared JSON/PoP required');}pm.request.body.update(raw);}const token=await pm.vault.get(pm.environment.get('operator_jwt_vault_key'));if(!token){pm.execution.skipRequest();throw Error('Real operator login required');}pm.request.headers.upsert({key:'Authorization',value:'Bearer '+token});}})().catch(()=>{pm.execution.skipRequest();throw Error('Operator credential/scope/prepared-command unavailable; no HTTP sent');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.execution.setNextRequest(null);pm.test('Operator HTTP request succeeded; not signing PASS',()=>pm.expect(pm.response.code).to.be.within(200,299));if(pm.response.code===200&&pm.response.json().schemaVersion==='AgentOperatorPreflight/v1'){const j=pm.response.json();pm.environment.set('operator_preflight_json',JSON.stringify(j));pm.environment.set('operator_preflight_status',j.overall==='PASS'?'PASS':'BLOCKED');}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Reason-Code",
+                "value": "MANUAL_OPERATOR_UNIFIED_WORKBENCH"
+              }
+            ],
+            "url": "{{platform_origin}}/v1/admin/tenants/{{tenant_id}}/agent-copy-profiles",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Real exact-hash allowlisted document-copy policy workflow; this grants no signing-key or verifier permission."
+          }
+        }
+      ]
+    }
+  ]
+}

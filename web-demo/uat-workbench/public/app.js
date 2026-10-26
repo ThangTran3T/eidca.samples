@@ -301,6 +301,37 @@ function gatesTable(pre) {
     .join('')}</tbody></table></div>`;
 }
 
+function deferredGateHelp(pre) {
+  const definitions = [
+    ['tenant', 'current_policy_allow', 'RUNTIME_INTENT_AND_CURRENT_POLICY_CHECK_REQUIRED', 'Request này chỉ đọc cấu hình, chưa có intent và tài liệu cụ thể để đánh giá.', 'Platform chạy policy engine trên intent thực tế, kiểm tra đúng Method/Provider/policy/quota trước dispatch.'],
+    ['signing', 'signer_key_ownership', 'EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED', 'Endpoint metadata chưa resolve issuer binding của certificate đang chọn.', 'Platform ghi nhận /eid-personal/check hoàn tất qua issuer workflow, đối chiếu exact certificate/SPKI/signer và scope hiện tại.'],
+    ['signing', 'signing_use_authority', 'EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED', 'Endpoint này chưa chạy phép kiểm quyền dùng khóa cho một hành động cụ thể.', 'Workflow runtime đối chiếu signer-intent, issuer binding và trust hiện hành; operator thực hiện consent NFC/AA/camera thật khi được yêu cầu.'],
+    ['signing', 'trust_revocation', 'EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED', 'Endpoint metadata chưa chạy validator trên certificate đã chọn.', 'Platform dùng source/trust policy đúng scope để kiểm tra chain, key usage và CRL/OCSP theo policy. Kết quả offline cần được nối vào workflow thật.'],
+    ['signing', 'provider_credential_scope', 'EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED', 'Phép kiểm theo exact credential/intent chưa được thực hiện ở endpoint này.', 'Platform đối chiếu credential, Provider, môi trường và operation tại action boundary. Đọc được secret chưa hoàn tất phép kiểm này.'],
+    ['provider', 'provider_credential_scope', 'ENDPOINT_SCOPE_OWNER_EVIDENCE_NOT_EVALUATED', 'Diagnostics chưa đối chiếu hồ sơ owner với endpoint/credential revision hiện hành.', 'Platform nối hồ sơ owner hiện hữu và bằng chứng Provider đúng scope. Không nhập lại API key hoặc xác nhận lại chỉ để đổi nhãn.'],
+  ];
+  const pending = definitions.filter(([owner, gate, code]) => {
+    const value = pre.owners?.[owner]?.gates?.[gate];
+    return value?.status === 'NOT_CHECKED' && value.code === code;
+  });
+  if (!pending.length) return '';
+  return `<section class="note warn" id="preflight-required-checks">
+    <b>${pending.length} phép kiểm chưa được endpoint metadata thực hiện</b>
+    <p>Các code bên dưới là trạng thái được backend trả cố định cho phép kiểm chưa chạy. Bấm lại 01 không làm chúng PASS. Việc nối diagnostics và xử lý source/trust thuộc Platform; các phép kiểm theo giao dịch chạy trong workflow thực tế. Verdict và security gate được giữ nguyên.</p>
+    <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Vì sao chưa kiểm</th><th>Điều kiện để kiểm và PASS</th></tr></thead><tbody>${pending.map(([owner, gate, , why, next]) => `<tr><td><code>${esc(owner)}.${esc(gate)}</code></td><td>${esc(why)}</td><td>${esc(next)}</td></tr>`).join('')}</tbody></table></div>
+  </section>`;
+}
+
+function localDispatchHelp() {
+  const raw = S.out.operator.HEALTH_LOCAL_CONNECTION?.response;
+  const value = raw?.data || raw, v = S.st.vars;
+  if (S.env !== 'LOCAL' || value?.schemaVersion !== 'LocalPlatformConnection/v1'
+      || value.tenantId !== v.tenant_id || value.bindingRef !== v.installation_binding
+      || value.environment !== v.installation_environment || value.dispatchConfigured !== false
+      || !value.blockerCodes?.includes('DISPATCH_DISABLED')) return '';
+  return `<div class="note warn" id="local-dispatch-diagnostics"><b>Local chưa mở dispatch: DISPATCH_DISABLED</b><p>Kết nối và authentication đã được kiểm riêng. Gate dispatch trong bảng 01 thuộc Signing-service; Local còn có cấu hình AllowDispatch độc lập. Chỉ mở Local sau khi certificate/source/trust và quyền dùng khóa đúng scope đã đủ. Nút preflight không thay đổi cấu hình này.</p></div>`;
+}
+
 // ---------------------------------------------------------------------------
 // Shared panels
 // ---------------------------------------------------------------------------
@@ -497,8 +528,21 @@ function candidatesTable() {
     .join('')}</tbody></table></div>`;
 }
 
+function checkedCallerExpiry(st) {
+  const p = st.preflight?.json, v = st.vars;
+  const owner = p?.owners?.tenant, caller = owner?.metadata?.caller;
+  if (!p || p.tenantId !== v.tenant_id || p.binding !== v.installation_binding
+      || p.environment !== v.installation_environment || owner?.tenantId !== v.tenant_id
+      || owner.binding !== v.installation_binding || owner.environment !== v.installation_environment
+      || caller?.grantId !== v.caller_grant_id
+      || owner.metadata?.authenticationKey?.keyId !== v.authentication_key_id
+      || owner.metadata?.profile?.revision !== v.profile_revision
+      || !Number.isFinite(Date.parse(caller.expiresAt))) return null;
+  return caller.expiresAt;
+}
+
 function pageVault() {
-  const st = S.st, exp = st.vars.caller_grant_expires_at;
+  const st = S.st, exp = checkedCallerExpiry(st);
   const expired = exp && Date.parse(exp) <= Date.now();
   return `<div class="page-head"><h2>Bước 1 · Nạp access một lần</h2><p class="muted">Tương đương Postman Local Vault (QUICK-START §1). Không đặt access vào environment/collection/shared variables.</p></div>
   <div class="note">Giá trị bí mật chỉ nằm trong bộ nhớ server cục bộ — khởi động lại server phải nạp lại. Website không hiển thị lại giá trị, chỉ metadata (định dạng, hạn JWT…). Environment hiện tại: <b>${S.env}</b>, caller slot <code>${esc(st.vars.caller_vault_key)}</code>.</div>
@@ -531,7 +575,38 @@ function varFields(names) {
 
 function gatesView(j) {
   const md = j.owners?.tenant?.metadata;
+  const credential = j.owners?.signing?.gates?.provider_credential_scope;
+  const provider = j.owners?.provider;
+  const resolution = provider?.gates?.credential_resolution;
+  const providerScope = provider?.gates?.provider_credential_scope;
+  // This exact response is a placeholder in the current Signing preflight.
+  // Explain its limits without changing the server verdict or admission state.
+  const credentialNotice = resolution ? `<div class="note ${resolution.status === 'PASS' ? '' : 'warn'}" id="credential-runtime-diagnostics">
+        <b>Credential — kết quả từ Provider runtime</b>
+        <div class="kv small">
+          <div>Đọc secret</div><div>${badge(resolution.status)} <code>${esc(resolution.code)}</code> · ${fmtTime(provider.checkedAt)}</div>
+          <div>Provider / môi trường</div><div>${esc(provider.metadata?.providerId)} / ${esc(provider.environment)}</div>
+          <div>Credential / reference</div><div>${esc(provider.metadata?.credentialId)} / <code>${esc(provider.metadata?.secretReference)}</code></div>
+          <div>Revision đã kiểm</div><div>${esc(provider.flowRevision)} — lấy từ profile đã publish, không dùng biến Provider nhập tay.</div>
+          <div>Phạm vi sử dụng credential</div><div>${badge(providerScope?.status)} <code>${esc(providerScope?.code)}</code></div>
+          ${provider.metadata?.resolverFailure ? `<div>Lỗi resolver</div><div><code>${esc(provider.metadata.resolverFailure)}</code></div>` : ''}
+        </div>
+        <p>Đọc bằng Vault resolver của workload hiện tại; cache tối đa 60 giây có thể được dùng. Phép kiểm không gọi eIDCA, không cấp authority và không chứng minh eIDCA chấp nhận credential. Xác nhận owner đã cung cấp vẫn được giữ trong hồ sơ; response này chưa đối chiếu hồ sơ đó.</p>
+      </div>` : credential?.status === 'NOT_CHECKED'
+    && credential.code === 'EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED'
+    ? `<div class="note warn" id="credential-diagnostics-gap">
+        <b>provider_credential_scope: chưa nhận được kết quả credential từ Provider cho profile này.</b>
+        <p>Không cần nhập lại API key, tạo credential hoặc xác nhận owner lần nữa chỉ để đổi dòng này thành PASS. Kiểm tra transport Provider và profile đã publish; giữ nguyên trạng thái cho đến khi có kết quả từ runtime.</p>
+        <div class="kv small">
+          <div>Đọc Vault bằng workload</div><div>Response này chưa có kết quả đọc secret từ Provider. Kết quả kiểm tra riêng cần thời điểm và scope tương ứng.</div>
+          <div>Xác nhận phạm vi credential</div><div>Chưa có kết quả đối chiếu hồ sơ owner với exact Provider, credential và endpoint. Không suy từ việc đọc được Vault.</div>
+          <div>eIDCA chấp nhận credential</div><div>API preflight này không gọi eIDCA. Chưa có kết quả authenticated Provider API trong response này.</div>
+        </div>
+        <p>Giữ nguyên verdict bên dưới. Các lỗi activation, cohort hoặc verifier là kết quả riêng cần xử lý trước khi ký.</p>
+      </div>` : '';
   return `<h4>Kết quả preflight ${badge(j.overall)} <span class="muted small">checkedAt ${fmtTime(j.checkedAt)} · signingActions ${esc(j.signingActions)}</span></h4>
+    ${credentialNotice}
+    ${deferredGateHelp(j)}
     ${gatesTable(j)}
     ${md?.caller ? `<div class="kv small mt8"><div>Caller grant</div><div class="mono">${esc(md.caller.grantId)} · hết hạn ${fmtTime(md.caller.expiresAt)} · revoked ${esc(md.caller.revoked)}</div><div>Authentication key</div><div class="mono">${esc(md.authenticationKey?.keyId)} · hết hạn ${esc(md.authenticationKey?.expiresAt)}</div><div>Profile</div><div class="mono">${esc(md.profile?.revision)} · ${esc(md.profile?.signatureProfile)} · ${esc(md.profile?.mode)}</div></div>` : ''}
     <p class="small muted">PASS transport chỉ chứng minh đọc được owner. NOT_CHECKED về ownership/use/trust/credential không phải PASS.</p>
@@ -559,7 +634,7 @@ function pagePreflight() {
         <button class="btn" data-act="op" data-id="HEALTH_LOCAL_CONNECTION" ${dis()}>Local Platform connection</button>
         <button class="btn" data-act="op" data-id="HEALTH_SERVER" ${dis()}>Server health</button>
       </div>
-      ${opResult('HEALTH_LOCAL_STATUS')}${opResult('HEALTH_LOCAL_CONNECTION')}${opResult('HEALTH_SERVER')}
+      ${opResult('HEALTH_LOCAL_STATUS')}${opResult('HEALTH_LOCAL_CONNECTION')}${opResult('HEALTH_SERVER')}${localDispatchHelp()}
     </div>
   </div>
   <div class="card"><div class="card-head"><h3>01 Complete scoped preflight</h3><span class="muted small mono">GET /v1/admin/tenants/{tenant}/agent-preflight</span></div>

@@ -1,0 +1,19 @@
+Postman tren may Windows nay - khong co secret trong file ban giao.
+
+1. Import ZIP / hai collections / Local environment.
+2. Auth login that da thuc hien bang account operator hien huu poc.ui.platform.
+3. Mo bang Windows Explorer thu muc bao ve:
+   %LOCALAPPDATA%\VNeCA\Postman\Workbench\3c4d9923-267f-4ff4-862b-28b25e850cf7
+4. Chi tren may local, copy noi dung operator-jwt.txt vao Postman Local Vault key:
+   vneca-operator-jwt
+   Khong paste vao environment, collection, chat hoac Customer Authorization.
+   Access nay het han 26/10/2026 01:18:40 Asia/Saigon.
+5. Operator collection -> 01 Read-only operator gates -> 01 Complete scoped preflight -> Send.
+6. Customer caller cu da het han 25/10/2026 22:04:09.384 Asia/Saigon.
+   Khong dung admin JWT lam customer bearer. Khong co caller grant moi duoc cap trong dot ban giao.
+   Workflow cap access that va authority con thieu duoc tach rieng trong OPERATOR-GUIDE.md.
+
+Local Agent: https://localhost:17889, PID30968, source47e87f2f.
+Tenant: ten_2990dee8-2d4c-4c27-b542-af46ebf5edc3.
+First actual refusal: 403 FORBIDDEN / Local Agent caller registration is inactive.
+No START, Provider challenge/submit, new grant or authority activation performed.

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "AgentOperatorCardinality/v1",
+  "at": "2026-10-25T16:55:35.562Z",
+  "tenant": "ten_2990dee8-2d4c-4c27-b542-af46ebf5edc3",
+  "canonicalTransaction": "nonexistent_read_only_probe",
+  "roots": 0,
+  "attempts": 0,
+  "usage": 0,
+  "usageQuantity": 0,
+  "usageEventIds": [],
+  "committedResults": 0,
+  "acceptedDigests": [],
+  "finalizationReceipts": 0,
+  "keyActions": "NOT_CHECKED_REQUIRE_PROVIDER_OPERATION_RECEIPT",
+  "status": "READ_ONLY_SNAPSHOT_NOT_CARDINALITY_PASS",
+  "writes": 0
+}

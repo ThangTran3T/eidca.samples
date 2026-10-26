@@ -1,0 +1,90 @@
+{
+  "at": "2026-10-25T17:09:05.506Z",
+  "workbench": {
+    "tests": 23,
+    "pass": 23,
+    "fail": 0,
+    "classification": "GENERATED_POSTMAN_SCRIPTS_EXECUTED_IN_CONTROLLED_SANDBOX_NOT_DESKTOP_GUI_E2E"
+  },
+  "serverTargeted": {
+    "tests": 10,
+    "pass": 10,
+    "fail": 0,
+    "classification": "SHIPPING_JOURNAL_FACADE_LIFECYCLE_WITH_CONTROLLED_TRANSPORT"
+  },
+  "backend": {
+    "tests": 140,
+    "pass": 140,
+    "fail": 0,
+    "packageStyle": "PASS"
+  },
+  "dotnet": {
+    "publicContractChecks": 86,
+    "callerAuthorityChecks": 29,
+    "ownerTransportChecks": 20,
+    "ownerFacadeChecks": 29,
+    "journal": "PASS_CONCURRENCY_32_AND_EXPIRY_REPLAY_SCOPE_RESTART",
+    "nativePipelineChecks": 97,
+    "classification": "CONTROLLED_OWNER_TRANSPORT_AND_TEST_PKI"
+  },
+  "cryptoVectors": {
+    "classification": "CONTROLLED_OFFLINE_VECTORS_NOT_PROVIDER_UAT",
+    "passed": 6,
+    "failed": 0,
+    "privateKeysWritten": 0,
+    "runtimeAuthorityChanges": 0
+  },
+  "retainedHistoricalPdf": "PASS",
+  "negativeTests": "EXPECTED_REFUSAL_PASS_IS_NOT_SIGNING_PASS",
+  "controlledNativeRecovery": "PASS",
+  "historicalFailedRuns": [
+    {
+      "scenario": "Generic CCCD software fixture",
+      "status": "FAIL",
+      "cause": "Generic BoundSigning adapter correctly refused for native eIDCA. Not relabelled Provider UAT."
+    },
+    {
+      "scenario": "USB fixture activation",
+      "status": "FAIL_THEN_FIXED",
+      "cause": "Sign/discovery both active; fixture needed explicit provider_flow_id pin. Production resolver unchanged."
+    },
+    {
+      "scenario": "USB OS crash count",
+      "status": "FAIL_THEN_FIXED",
+      "cause": "Old assertion still counted removed SELECT_PROVIDER boundary; now checks seven exact boundaries and PID/origin continuity."
+    },
+    {
+      "scenario": "Independent Local PAdES",
+      "status": "FAIL_THEN_FIXED",
+      "cause": "Local native PAdES inherited legacy CMS signingTime/adbe SubFilter. Separate PAdES helper options now omit CMS time and use ETSI.CAdES.detached; legacy/CMS overloads preserved."
+    }
+  ],
+  "actualRuntime": {
+    "preflight": "PASS_READ_ONLY_DIAGNOSTICS",
+    "expiredCallerNegative": "PASS_403_FORBIDDEN",
+    "realSigning": "NOT_EXECUTED",
+    "postmanDesktopGui": "NOT_EXECUTED"
+  },
+  "startsAgainstRealProvider": 0,
+  "newRealAuthority": 0,
+  "skipped": "UNEXECUTED_REAL_DEVICE_PROVIDER_AND_FORMAT_VARIANTS_LISTED_IN_READINESS_MATRIX",
+  "billing": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "skipped": 0,
+    "classification": "ACTUAL_SPRING_JPA_H2_COMPONENT_REPLAY_CONSUMER_AND_ACCOUNTING_INVARIANTS_NOT_FIVE_OWNER_BILLING_E2E",
+    "postgresBillingCurrentTenant": "NOT_EXECUTED",
+    "coupledToControlledUsbTransaction": false
+  },
+  "independentControlledPdf": {
+    "status": "PASS",
+    "independentImplementation": "PDFBox3.0.8_BouncyCastle_JDK",
+    "artifactSha256": "c28ff7c0c22f1578db9b26f31e7d7e9e45602535ca5348ba2be7180c624b3254",
+    "inputSha256": "64b4a58e0ae551521834954c5d4cdcb7ba9502868617aa01f3c1bb5cc3b5fb88",
+    "certificateSha256": "b7e0a773612be645fccd6d99ec07ee058932a0cd8240d9a7ce5d409b96266e8a",
+    "profile": "PASS_SINGLE_SIGNATURE_PADES_B_B_PROFILE_CHECKS",
+    "pkixFullCrl": "PASS",
+    "signerOwnershipAndKeyUseAuthority": "NOT_EVALUATED"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "NativeLocalArtifactMeasurement/v1",
+  "implementationDigest": "996b22196ac8c5c182eae28dbeb0f7a6edc8a3ebdae33e16a4f3fe386d19235c",
+  "agentVersion": "1.5.0",
+  "preparationVerifier": "vneca-native-source-preparation@1",
+  "finalizationVerifier": "vneca-local-native-finalizer@1",
+  "authority": "NOT_GRANTED"
+}

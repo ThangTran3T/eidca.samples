@@ -1,0 +1,196 @@
+{
+  "at": "2026-10-25T17:07:16.110Z",
+  "tenant": "ten_2990dee8-2d4c-4c27-b542-af46ebf5edc3",
+  "assignmentsHttp": 200,
+  "assignments": [
+    {
+      "environment": "production",
+      "tenant_method_provider_id": "tmp_medical_default_esign_ca2",
+      "method_code": "APP_CA_REMOTE_SIGNING",
+      "provider_id": "prv_esign_ca2",
+      "priority": 1,
+      "is_active": true,
+      "provisionedFlowPin": "NOT_OBSERVED_IN_AUTHORING_RESPONSE"
+    },
+    {
+      "environment": "production",
+      "tenant_method_provider_id": "tmp_77a289a0e2f2",
+      "method_code": "CCCD_NFC",
+      "provider_id": "prv_eidca_hash",
+      "priority": 2,
+      "is_active": true,
+      "provisionedFlowPin": "NOT_OBSERVED_IN_AUTHORING_RESPONSE"
+    },
+    {
+      "environment": "sandbox",
+      "tenant_method_provider_id": "tmp_1692c892137d",
+      "method_code": "CCCD_NFC",
+      "provider_id": "prv_eidca_hash",
+      "priority": 2,
+      "is_active": true,
+      "provisionedFlowPin": "flow_4ef6054bba71"
+    },
+    {
+      "environment": "production",
+      "tenant_method_provider_id": "tmp_medical_default_cks_hsm",
+      "method_code": "SMART_CARD",
+      "provider_id": "prv_cks_hsm",
+      "priority": 1,
+      "is_active": true,
+      "provisionedFlowPin": "NOT_OBSERVED_IN_AUTHORING_RESPONSE"
+    },
+    {
+      "environment": "production",
+      "tenant_method_provider_id": "tmp_medical_default_usb_token",
+      "method_code": "USB_TOKEN",
+      "provider_id": "prv_7a161b93-174e-48e5-92d7-ff6c6fe3bab7",
+      "priority": 1,
+      "is_active": true,
+      "provisionedFlowPin": "NOT_OBSERVED_IN_AUTHORING_RESPONSE"
+    },
+    {
+      "environment": "production",
+      "tenant_method_provider_id": "tmp_medical_default_vneid_ca2",
+      "method_code": "VNEID",
+      "provider_id": "prv_ca2_vneid",
+      "priority": 1,
+      "is_active": true,
+      "provisionedFlowPin": "NOT_OBSERVED_IN_AUTHORING_RESPONSE"
+    },
+    {
+      "environment": "sandbox",
+      "tenant_method_provider_id": "tmp_medical_default_vneid_fpt_rsv",
+      "method_code": "VNEID",
+      "provider_id": "prv_fpt_rsv",
+      "priority": 1,
+      "is_active": true,
+      "provisionedFlowPin": "NOT_OBSERVED_IN_AUTHORING_RESPONSE"
+    }
+  ],
+  "providerApisHttp": 200,
+  "providerApis": [
+    {
+      "environment": "production",
+      "status": "ACTIVE",
+      "api_name": "Owner-approved issuance recovery once 20261025",
+      "http_method": "POST",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_9594b044a0a4",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/eid-personal/check"
+    },
+    {
+      "environment": "production",
+      "status": "ACTIVE",
+      "api_name": "eIDCA-Hash-health",
+      "http_method": "GET",
+      "auth_type": "NONE",
+      "provider_api_id": "api_eidca_hash_health",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "http://provider-service:8083",
+      "path_template": "/actuator/health"
+    },
+    {
+      "environment": "production",
+      "status": "ACTIVE",
+      "api_name": "eid-personal-registration-challenge",
+      "http_method": "POST",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_eidca_hash_reg_challenge",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/eid-personal/challenge"
+    },
+    {
+      "environment": "production",
+      "status": "ACTIVE",
+      "api_name": "eid-personal-registration-check",
+      "http_method": "POST",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_eidca_hash_reg_check",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/eid-personal/check"
+    },
+    {
+      "environment": "production",
+      "status": "ACTIVE",
+      "api_name": "eid-personal-registration-signature",
+      "http_method": "POST",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_eidca_hash_reg_signature",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/eid-personal/signature"
+    },
+    {
+      "environment": "production",
+      "status": "ACTIVE",
+      "api_name": "sign-hash-challenge",
+      "http_method": "POST",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_eidca_hash_challenge",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/sign/hash/challenge"
+    },
+    {
+      "environment": "production",
+      "status": "ACTIVE",
+      "api_name": "sign-hash-status",
+      "http_method": "GET",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_eidca_hash_status",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/sign/hash/status?transaction_code={{eidca_hash.transaction_code}}&type=pdf"
+    },
+    {
+      "environment": "production",
+      "status": "ACTIVE",
+      "api_name": "sign-hash-submit",
+      "http_method": "POST",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_eidca_hash_submit",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/sign/hash/submit"
+    },
+    {
+      "environment": "sandbox",
+      "status": "ACTIVE",
+      "api_name": "EIDCA_NATIVE_SANDBOX_LOCAL_V1_0",
+      "http_method": "POST",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_d6dcb159ee30",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/sign/hash/challenge"
+    },
+    {
+      "environment": "sandbox",
+      "status": "ACTIVE",
+      "api_name": "EIDCA_NATIVE_SANDBOX_LOCAL_V1_1",
+      "http_method": "POST",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_dd12268ae3eb",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/sign/hash/submit"
+    },
+    {
+      "environment": "sandbox",
+      "status": "ACTIVE",
+      "api_name": "EIDCA_NATIVE_SANDBOX_LOCAL_V1_2",
+      "http_method": "GET",
+      "auth_type": "API_KEY",
+      "provider_api_id": "api_4d04a400fff7",
+      "provider_id": "prv_eidca_hash",
+      "base_url": "https://api-sandbox.jth.vn",
+      "path_template": "/ca/api/sign/hash/status?transaction_code={{eidca_hash.transaction_code}}&type=pdf"
+    }
+  ],
+  "externalProviderCalls": 0,
+  "secretsExported": 0
+}
