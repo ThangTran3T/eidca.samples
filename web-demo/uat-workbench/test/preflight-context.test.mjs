@@ -36,6 +36,27 @@ test('a response for another transaction fails the context check',async t=>{
   assert.equal((await s.service.run('LOCAL','PREFLIGHT_INTENT')).ok,false);
   assert.equal(s.envState.preflight('LOCAL'),null);
 });
+
+test('configuration PASS permits an intent while preserving all unchecked action authority',async t=>{
+  const reply={schemaVersion:'AgentOperatorPreflight/v1',overall:'NOT_CHECKED',configurationOverall:'PASS',signingActions:0,
+    owners:{signing:{gates:{signing_use_authority:{status:'NOT_CHECKED',code:'SELECTED_CERTIFICATE_AND_INTENT_REQUIRED'}}}}};
+  const s=setup(t,reply),result=await s.service.run('LOCAL','PREFLIGHT');
+  assert.equal(result.ok,true);assert.equal(result.preflightStatus,'PASS');
+  const actual=s.envState.preflight('LOCAL');
+  assert.equal(actual.status,'PASS');assert.equal(actual.configurationOverall,'PASS');assert.equal(actual.overall,'NOT_CHECKED');
+  assert.deepEqual(actual.json,reply);assert.equal(s.calls.length,1);assert.equal(s.calls[0].request.method,'GET');
+});
+
+test('a failed configuration cannot inherit a PASS from an unrelated overall field',async t=>{
+  const s=setup(t,{schemaVersion:'AgentOperatorPreflight/v1',overall:'PASS',configurationOverall:'BLOCKED_AUTHORITY',signingActions:0});
+  assert.equal((await s.service.run('LOCAL','PREFLIGHT')).preflightStatus,'BLOCKED');
+  assert.equal(s.envState.preflight('LOCAL').configurationOverall,'BLOCKED_AUTHORITY');
+});
+
+test('legacy owner responses without configuration diagnostics remain blocked when unchecked',async t=>{
+  const s=setup(t,{schemaVersion:'AgentOperatorPreflight/v1',overall:'NOT_CHECKED',signingActions:0});
+  assert.equal((await s.service.run('LOCAL','PREFLIGHT')).preflightStatus,'BLOCKED');
+});
 test('rendering preserves NOT_CHECKED and historical layers while exposing configuration and next steps',()=>{
   const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
   const chunk=source.slice(source.indexOf('function gatesTable('),source.indexOf('function deferredGateHelp('));

@@ -353,7 +353,7 @@ function renderTop() {
   const dot = (on, label) => `<span><span class="dot ${on ? 'on' : ''}"></span>${label}</span>`;
   return `<div class="title">VNeCA Unified Agent v2 — UAT thủ công<small>Gửi từng bước bằng tay · không Runner · không auto-retry/poll/approve</small></div>
   <div class="group">Agent <div class="seg"><button data-act="env" data-env="LOCAL" class="${S.env === 'LOCAL' ? 'on' : ''}">Local</button><button data-act="env" data-env="SERVER" class="${S.env === 'SERVER' ? 'on' : ''}">Server</button></div></div>
-  <div class="group">Preflight ${badge(st?.preflight?.status || 'NOT_CHECKED')}</div>
+  <div class="group">Cấu hình trước START ${badge(st?.preflight?.status || 'NOT_CHECKED')}</div>
   <div class="group">Phiên ${sel ? esc(sel.caseId + ' / ' + sel.runId) + ' ' + badge(sel.state) : '<span class="muted">chưa chọn</span>'}</div>
   <div class="group">${dot(v[st?.vars?.caller_vault_key]?.present, 'caller')} ${dot(v['vneca-signing-identity']?.present, 'identity')} ${dot(v['vneca-operator-jwt']?.present, 'operator')}</div>`;
 }
@@ -632,7 +632,8 @@ function pagePreflight() {
   const reads = [['ASSIGNMENTS', '02 Method / Provider assignments', 'Đối chiếu Method/environment/Provider/native pins, không đọc label hiển thị.'], ['PROVIDER_APIS', '03 Provider APIs effective metadata', 'Origin, API environment, auth mechanism, credential reference. Không export raw response.'], ['PROVIDER_FLOWS', '04 Provider flow revisions', 'Đọc native recipe đã publish; không republish cấu hình Owner.'], ['NATIVE_PLAN', '05 Native Provider plan dry-read', 'Không gọi challenge/submit, không resolve credential, không authorize signer.'], ['TRANSACTIONS', '06 Transaction list / reconciliation', 'List rỗng không chứng minh 0 key action hay 0 Billing.']];
   const writeId = S.form['w.id'] || 'PROVISION_EXISTING_AGENT';
   return `<div class="page-head"><h2>Bước 2 · Preflight trước START</h2><p class="muted">Operator collection: đăng nhập thật, đọc gate scoped. Preflight đọc không tạo transaction, challenge hay grant.</p></div>
-  <div class="note ${pre.status === 'PASS' ? 'ok' : pre.status === 'BLOCKED' ? 'warn' : ''}">Preflight environment ${S.env}: ${badge(pre.status)} ${pre.overall ? 'overall ' + badge(pre.overall) : ''} ${pre.at ? '· ' + fmtTime(pre.at) : ''}<br>
+  <div class="note ${pre.status === 'PASS' ? 'ok' : pre.status === 'BLOCKED' ? 'warn' : ''}">Cấu hình trước START ${S.env}: ${badge(pre.status)} ${pre.overall ? '· Tổng quyền theo giao dịch: ' + badge(pre.overall) : ''} ${pre.at ? '· ' + fmtTime(pre.at) : ''}<br>
+    <span class="small">Cấu hình PASS cho phép bắt đầu intent. Ownership, quyền dùng khóa, trust và chính sách theo hành động được thực thi trong workflow; chưa chạy vẫn NOT_CHECKED.</span><br>
     <span class="small">Chỉ response thật của <b>01 Complete scoped preflight</b> mới đổi trạng thái này (không thể sửa tay, không suy từ health). NOT_CHECKED chặn 03 START; BLOCKED cho phép Send có chủ đích để quan sát lỗi thật — refusal vẫn đỏ.</span></div>
   <div class="grid2">
     <div class="card"><h3>00 LOGIN — operator thật</h3>

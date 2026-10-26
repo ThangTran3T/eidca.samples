@@ -117,9 +117,12 @@ export function createOperatorService({ vault, envState, send }) {
     }
     tests.push({ name: 'Operator HTTP request succeeded; not signing PASS', pass: res.status >= 200 && res.status <= 299 });
     if (id === 'PREFLIGHT' && res.status === 200 && json?.schemaVersion === 'AgentOperatorPreflight/v1') {
-      // Only a real scoped preflight response moves the START gate; health never does.
-      envState.setPreflight(kind, { status: json.overall === 'PASS' ? 'PASS' : 'BLOCKED', overall: json.overall, at: new Date().toISOString(), json });
-      out.preflightStatus = json.overall === 'PASS' ? 'PASS' : 'BLOCKED';
+      // Configuration readiness permits an intent; it never proves intent/certificate/action authority.
+      // Older owners without layered diagnostics retain their original overall semantics.
+      const configurationOverall = json.configurationOverall ?? json.overall;
+      const status = configurationOverall === 'PASS' ? 'PASS' : 'BLOCKED';
+      envState.setPreflight(kind, { status, overall: json.overall, configurationOverall, at: new Date().toISOString(), json });
+      out.preflightStatus = status;
     }
     if (id === 'PREFLIGHT_INTENT' && res.status === 200 && json?.schemaVersion === 'AgentOperatorPreflight/v1') {
       tests.push({ name: 'Owner echoed the exact existing transaction; not a new intent or signing action',
