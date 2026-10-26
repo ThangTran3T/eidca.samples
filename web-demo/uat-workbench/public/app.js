@@ -294,11 +294,24 @@ function stepper(state) {
 }
 function gatesTable(pre) {
   const rows = [];
-  for (const [k, g] of Object.entries(pre.transport || {})) rows.push(['transport', k, g.status, g.code]);
-  for (const [owner, o] of Object.entries(pre.owners || {})) for (const [k, g] of Object.entries(o.gates || {})) rows.push([owner, k, g.status, g.code]);
-  return `<div class="table-wrap"><table><thead><tr><th>Owner</th><th>Gate</th><th>Trạng thái</th><th>Code</th></tr></thead><tbody>${rows
-    .map(r => `<tr><td>${esc(r[0])}</td><td class="mono">${esc(r[1])}</td><td>${badge(r[2])}</td><td class="mono small">${esc(r[3])}</td></tr>`)
+  for (const [k, g] of Object.entries(pre.transport || {})) rows.push(['transport', k, g]);
+  for (const [owner, o] of Object.entries(pre.owners || {})) for (const [k, g] of Object.entries(o.gates || {})) rows.push([owner, k, g]);
+  return `<div class="table-wrap"><table><thead><tr><th>Owner</th><th>Gate</th><th>Trạng thái thực thi</th><th>Vì sao / bước xử lý / bằng chứng</th></tr></thead><tbody>${rows
+    .map(([owner, key, g]) => `<tr><td>${esc(owner)}</td><td class="mono">${esc(key)}</td><td>${badge(g.status)}</td><td><code>${esc(g.code)}</code>${gateEvidence(g, owner, key)}</td></tr>`)
     .join('')}</tbody></table></div>`;
+}
+
+function gateEvidence(g, owner, key) {
+  const names = { configuration: 'Cấu hình trước START', intent: 'Intent', certificate: 'Chứng thư', dispatch: 'Trước dispatch' };
+  let help = '';
+  if (g.code === 'SELECTED_CERTIFICATE_AND_INTENT_REQUIRED') help = 'Chưa có giao dịch/chứng thư được chọn trong phép đọc này. Dùng 01b để xem bằng chứng của giao dịch đã có; không tạo START chỉ để làm xanh bảng.';
+  else if (g.code === 'PUBLISHED_POLICY_NOT_CURRENT') help = 'Policy đã publish không còn hiệu lực/không khớp scope hiện tại. Operator kiểm tra thời hạn và publish qua workflow policy hợp lệ; không sửa expiry trong DB.';
+  else if (g.code === 'CONFIGURED_SCOPE_CONSISTENT_PROVIDER_ACCEPTANCE_UNPROVEN') help = 'Cấu hình endpoint/credential đã khớp, nhưng chưa có bằng chứng Provider chấp nhận credential. Đọc được Vault không chứng minh điều này; giữ nguyên xác nhận owner đã có.';
+  else if (g.code === 'WORKLOAD_VAULT_RESOLUTION_FAILED') help = 'Workload không đăng nhập/đọc Vault được. Secret-store operator kiểm tra AppRole/SecretID hiện tại; không thay API key hoặc tráo reference.';
+  else if (g.code === 'INTENT_TERMINAL_EVIDENCE_HISTORICAL') help = 'Giao dịch đã kết thúc. Các lớp bên dưới là bằng chứng lịch sử, không phải quyền hiện tại; không replay hoặc mở lại phiên.';
+  if (owner === 'signing' && key === 'signing_use_authority') help += ' Quyền cho hành động chỉ được xác minh khi composition/approval hợp lệ ngay trước dispatch; không phải PASS trước START.';
+  const layers = Object.entries(g.layers || {}).map(([name, layer]) => `<div class="mt8"><b>${esc(names[name] || name)}</b>: ${badge(layer.status)} <code>${esc(layer.code)}</code>${layer.current != null ? ` · current=${esc(layer.current)}` : ''}${layer.checkedAt ? ` · kiểm ${fmtTime(layer.checkedAt)}` : ''}${layer.validUntil ? ` · đến ${fmtTime(layer.validUntil)}` : ''}</div>`).join('');
+  return `${help ? `<p class="small">${esc(help)}</p>` : ''}${layers}${g.enforcement ? `<div class="small muted mt8">Điểm thực thi: ${esc(typeof g.enforcement === 'string' ? g.enforcement : JSON.stringify(g.enforcement))}</div>` : ''}`;
 }
 
 function deferredGateHelp(pre) {
@@ -605,6 +618,7 @@ function gatesView(j) {
         <p>Giữ nguyên verdict bên dưới. Các lỗi activation, cohort hoặc verifier là kết quả riêng cần xử lý trước khi ký.</p>
       </div>` : '';
   return `<h4>Kết quả preflight ${badge(j.overall)} <span class="muted small">checkedAt ${fmtTime(j.checkedAt)} · signingActions ${esc(j.signingActions)}</span></h4>
+    <div class="note"><b>Cấu hình trước START: ${badge(j.configurationOverall || 'NOT_CHECKED')}</b><p>Đây là kết quả riêng với quyền theo intent/chứng thư/hành động. Các lớp chưa được thực thi vẫn giữ NOT_CHECKED; không suy quyền ký từ cấu hình PASS.</p>${j.context?.transactionId ? `<div>Giao dịch đang đối soát: <code>${esc(j.context.transactionId)}</code></div>` : '<div>Chưa chọn giao dịch để đọc bằng chứng intent. Dùng 01b với canonical transaction đã tồn tại.</div>'}</div>
     ${credentialNotice}
     ${deferredGateHelp(j)}
     ${gatesTable(j)}
@@ -642,6 +656,13 @@ function pagePreflight() {
     <div class="actions"><button class="btn primary" data-act="op" data-id="PREFLIGHT" ${dis()}>Gửi 01 Complete scoped preflight</button></div>
     ${opResult('PREFLIGHT', { hideJson: true })}
     ${pre.json ? gatesView(pre.json) : ''}
+  </div>
+  <div class="card" id="intent-bound-preflight"><h3>01b Intent-bound preflight — đọc giao dịch đã có</h3>
+    <p>Đọc bằng chứng intent/chứng thư/dispatch đã ghi của đúng canonical transaction. Không START, không re-authorize, không thay kết quả cấu hình 01. Phiên CANCELLED/hết hạn chỉ có bằng chứng lịch sử.</p>
+    ${inputField('var.canonical_transaction_id', 'canonical_transaction_id', { def: st.vars.canonical_transaction_id, placeholder: 'btx_… của giao dịch đã tồn tại', mono: true })}
+    <div class="actions"><button class="btn" data-act="op" data-id="PREFLIGHT_INTENT" ${dis()}>Gửi 01b Intent-bound preflight</button></div>
+    ${opResult('PREFLIGHT_INTENT', { hideJson: true })}
+    ${S.out.operator.PREFLIGHT_INTENT?.ok && S.out.operator.PREFLIGHT_INTENT?.response?.schemaVersion === 'AgentOperatorPreflight/v1' ? gatesView(S.out.operator.PREFLIGHT_INTENT.response) : ''}
   </div>
   <div class="card"><h3>02–06 Đọc metadata (read-only)</h3>
     <details><summary>Biến Provider / transaction</summary>${varFields(READ_VARS)}</details>

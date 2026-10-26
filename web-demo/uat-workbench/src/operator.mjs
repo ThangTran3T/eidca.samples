@@ -26,6 +26,10 @@ export const OPERATOR_REQUESTS = Object.freeze({
       verifierRevision: v.verifier_revision,
     }),
   },
+  PREFLIGHT_INTENT: {
+    name: '01b Intent-bound preflight — read existing transaction', mode: 'READ', method: 'GET',
+    path: v => OPERATOR_REQUESTS.PREFLIGHT.path(v) + '&transaction=' + enc(v.canonical_transaction_id),
+  },
   ASSIGNMENTS: { name: '02 Method / Provider assignments', mode: 'READ', method: 'GET', path: v => `/v1/admin/tenants/${enc(v.tenant_id)}/method-providers` },
   PROVIDER_APIS: { name: '03 Provider APIs effective metadata', mode: 'READ', method: 'GET', path: v => `/v1/admin/providers/${enc(v.operator_provider_id)}/apis` },
   PROVIDER_FLOWS: { name: '04 Provider flow revisions', mode: 'READ', method: 'GET', path: v => `/v1/admin/providers/${enc(v.operator_provider_id)}/flows` },
@@ -52,6 +56,8 @@ export function createOperatorService({ vault, envState, send }) {
     const def = OPERATOR_REQUESTS[id];
     if (!def) return { refused: 'UNKNOWN_OPERATOR_REQUEST' };
     const v = envState.vars(kind);
+    if (id === 'PREFLIGHT_INTENT' && !/^btx_[A-Za-z0-9_-]{1,160}$/.test(v.canonical_transaction_id || ''))
+      return { refused: 'EXISTING_CANONICAL_TRANSACTION_REQUIRED' };
     const headers = { 'Content-Type': 'application/json' };
     let url, body = null;
 
@@ -110,10 +116,14 @@ export function createOperatorService({ vault, envState, send }) {
       return out;
     }
     tests.push({ name: 'Operator HTTP request succeeded; not signing PASS', pass: res.status >= 200 && res.status <= 299 });
-    if (res.status === 200 && json?.schemaVersion === 'AgentOperatorPreflight/v1') {
+    if (id === 'PREFLIGHT' && res.status === 200 && json?.schemaVersion === 'AgentOperatorPreflight/v1') {
       // Only a real scoped preflight response moves the START gate; health never does.
       envState.setPreflight(kind, { status: json.overall === 'PASS' ? 'PASS' : 'BLOCKED', overall: json.overall, at: new Date().toISOString(), json });
       out.preflightStatus = json.overall === 'PASS' ? 'PASS' : 'BLOCKED';
+    }
+    if (id === 'PREFLIGHT_INTENT' && res.status === 200 && json?.schemaVersion === 'AgentOperatorPreflight/v1') {
+      tests.push({ name: 'Owner echoed the exact existing transaction; not a new intent or signing action',
+        pass: json.context?.transactionId === v.canonical_transaction_id && json.signingActions === 0 });
     }
     out.response = json ? redact(json) : { nonJsonBody: res.text.slice(0, 2000) };
     return out;
