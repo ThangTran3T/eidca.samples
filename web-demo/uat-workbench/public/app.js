@@ -33,7 +33,7 @@ const PAGES = [
   ['docs', 'Tài liệu gói'],
 ];
 
-const PREFLIGHT_VARS = ['installation_binding', 'installation_environment', 'agent_id', 'agent_version', 'authentication_key_id', 'profile_revision', 'policy_revision', 'caller_grant_id', 'policy_hash', 'verifier_artifact', 'finalization_mode', 'owner_signature_profile', 'verifier_revision'];
+const PREFLIGHT_VARS = ['installation_binding', 'installation_environment', 'agent_id', 'agent_version', 'authentication_key_id', 'profile_revision', 'policy_revision', 'caller_grant_id', 'policy_hash', 'verifier_artifact', 'finalization_mode', 'owner_signature_profile', 'verifier_revision', 'running_revision', 'agent_artifact_sha256'];
 const READ_VARS = ['operator_provider_id', 'operator_provider_revision', 'operator_provider_hash', 'canonical_transaction_id', 'operator_flow_id'];
 const SESSION_STATES = ['NEW', 'LOCKED', 'ACTION_REQUIRED', 'PROCESSING', 'COMPLETED', 'CANCELLED'];
 
