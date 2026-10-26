@@ -634,7 +634,7 @@ function pagePreflight() {
   return `<div class="page-head"><h2>Bước 2 · Preflight trước START</h2><p class="muted">Operator collection: đăng nhập thật, đọc gate scoped. Preflight đọc không tạo transaction, challenge hay grant.</p></div>
   <div class="note ${pre.status === 'PASS' ? 'ok' : pre.status === 'BLOCKED' ? 'warn' : ''}">Cấu hình trước START ${S.env}: ${badge(pre.status)} ${pre.overall ? '· Tổng quyền theo giao dịch: ' + badge(pre.overall) : ''} ${pre.at ? '· ' + fmtTime(pre.at) : ''}<br>
     <span class="small">Cấu hình PASS cho phép bắt đầu intent. Ownership, quyền dùng khóa, trust và chính sách theo hành động được thực thi trong workflow; chưa chạy vẫn NOT_CHECKED.</span><br>
-    <span class="small">Chỉ response thật của <b>01 Complete scoped preflight</b> mới đổi trạng thái này (không thể sửa tay, không suy từ health). NOT_CHECKED chặn 03 START; BLOCKED cho phép Send có chủ đích để quan sát lỗi thật — refusal vẫn đỏ.</span></div>
+    <span class="small">Chỉ response thật của <b>01 Complete scoped preflight</b> mới đổi trạng thái này. START dùng kết quả cấu hình trước START; NOT_CHECKED của quyền theo giao dịch không đồng nghĩa cấu hình bị lỗi. Các quyền đó được kiểm tra trong workflow trước hành động tương ứng.</span></div>
   <div class="grid2">
     <div class="card"><h3>00 LOGIN — operator thật</h3>
       <p class="small">Cần username/password operator trong Vault (Bước 1), hoặc nạp sẵn <code>operator-jwt.txt</code>. JWT admin không bao giờ dùng làm customer bearer.</p>
