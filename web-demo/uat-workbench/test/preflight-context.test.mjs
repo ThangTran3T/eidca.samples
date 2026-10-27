@@ -69,3 +69,15 @@ test('rendering preserves NOT_CHECKED and historical layers while exposing confi
   const bad=ctx.gateEvidence({code:'<script>bad</script>',enforcement:'<img src=x onerror=bad>'},'signing','signing_use_authority');
   assert.doesNotMatch(bad,/<img|<script/);
 });
+
+test('send warning uses the exact current Provider preflight, never the historical eIDCA package origin',()=>{
+  const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+  const chunk=source.slice(source.indexOf('function checkedCallerExpiry('),source.indexOf('function pageVault('));
+  const ctx=vm.createContext({URL,esc:x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')});vm.runInContext(chunk,ctx);
+  const st={vars:{tenant_id:'tenant',installation_binding:'esign',installation_environment:'production',caller_grant_id:'grant',authentication_key_id:'key',profile_revision:'profile'},preflight:{json:{tenantId:'tenant',binding:'esign',environment:'production',owners:{tenant:{tenantId:'tenant',binding:'esign',environment:'production',metadata:{caller:{grantId:'grant',expiresAt:'2026-10-27T06:20:00Z'},authenticationKey:{keyId:'key'},profile:{revision:'profile'}}},provider:{tenantId:'tenant',environment:'production',metadata:{providerId:'prv_esign_ca2'},gates:{provider_credential_scope:{layers:{configuration:{planEnvironment:'production',apiEnvironment:'production',apiOrigin:'https://esign2.neac.gov.vn'}}}}}}}}};
+  const html=ctx.checkedProviderRouteNote(st);
+  assert.match(html,/https:\/\/esign2\.neac\.gov\.vn/);assert.match(html,/prv_esign_ca2/);assert.doesNotMatch(html,/api-sandbox\.jth\.vn/);
+  const stale=structuredClone(st);stale.preflight.json.binding='old-eidca';assert.doesNotMatch(ctx.checkedProviderRouteNote(stale),/https:\/\//);
+  const foreign=structuredClone(st);foreign.preflight.json.owners.provider.tenantId='other';assert.doesNotMatch(ctx.checkedProviderRouteNote(foreign),/https:\/\//);
+  const invalid=structuredClone(st);invalid.preflight.json.owners.provider.gates.provider_credential_scope.layers.configuration.apiOrigin='https://secret@example.invalid';assert.doesNotMatch(ctx.checkedProviderRouteNote(invalid),/secret|example\.invalid/);
+});

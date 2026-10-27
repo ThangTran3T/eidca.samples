@@ -449,7 +449,7 @@ function pageOverview() {
     ['verify', 'Lưu, verify độc lập và đối soát ký/tính phí trùng.'],
   ];
   return `<div class="page-head"><h2>Tổng quan</h2><p class="muted">Website thay Postman Desktop cho bộ workbench Unified Agent v2: mỗi request chỉ gửi khi bạn bấm, theo đúng thứ tự QUICK-START-VI.md.</p></div>
-  <div class="note warn"><b>Trước khi gửi giao dịch:</b> environment tenant là <b>${esc(rt?.installationEnvironment || 'production')}</b>, endpoint eIDCA của Owner là <b>${esc(rt?.providerEndpoint || '')}</b>. Provider/CA thật có thể phát sinh phí chưa xác định. Có website không đồng nghĩa Provider đã sẵn sàng ký; FAILED không bao giờ là PASS.</div>
+  <div class="note warn"><b>Trước khi gửi giao dịch:</b> ${checkedProviderRouteNote(S.st)} Provider/CA thật có thể phát sinh phí chưa xác định. Có website không đồng nghĩa Provider đã sẵn sàng ký; FAILED không bao giờ là PASS.</div>
   <div class="grid2">
     <div class="card"><h3>Gói workbench</h3><div class="kv">
       <div>Thư mục</div><div class="mono">${esc(m.package.name)}</div>
@@ -554,6 +554,20 @@ function checkedCallerExpiry(st) {
   return caller.expiresAt;
 }
 
+function checkedProviderRouteNote(st) {
+  const p = st?.preflight?.json, v = st?.vars, owner = p?.owners?.provider;
+  const route = owner?.gates?.provider_credential_scope?.layers?.configuration;
+  if (!v || !checkedCallerExpiry(st) || owner?.tenantId !== v.tenant_id
+      || owner.environment !== v.installation_environment
+      || route?.planEnvironment !== v.installation_environment || route.apiEnvironment !== v.installation_environment
+      || !owner.metadata?.providerId) return 'Chưa có endpoint Provider được kiểm chứng cho scope hiện tại. Chạy 01 Complete scoped preflight ở Bước 2.';
+  try {
+    const origin = new URL(route.apiOrigin);
+    if (origin.protocol !== 'https:' || origin.username || origin.password || origin.origin !== route.apiOrigin) throw new Error('origin');
+    return `Environment <b>${esc(v.installation_environment)}</b>; Provider <b>${esc(owner.metadata.providerId)}</b>; endpoint đã đọc từ preflight <b>${esc(origin.origin)}</b>. Đây là cấu hình, chưa chứng minh Provider chấp nhận giao dịch.`;
+  } catch { return 'Chưa có HTTPS Provider origin hợp lệ trong preflight của scope hiện tại.'; }
+}
+
 function pageVault() {
   const st = S.st, exp = checkedCallerExpiry(st);
   const expired = exp && Date.parse(exp) <= Date.now();
@@ -604,7 +618,7 @@ function gatesView(j) {
           <div>Phạm vi sử dụng credential</div><div>${badge(providerScope?.status)} <code>${esc(providerScope?.code)}</code></div>
           ${provider.metadata?.resolverFailure ? `<div>Lỗi resolver</div><div><code>${esc(provider.metadata.resolverFailure)}</code></div>` : ''}
         </div>
-        <p>Đọc bằng Vault resolver của workload hiện tại; cache tối đa 60 giây có thể được dùng. Phép kiểm không gọi eIDCA, không cấp authority và không chứng minh eIDCA chấp nhận credential. Xác nhận owner đã cung cấp vẫn được giữ trong hồ sơ; response này chưa đối chiếu hồ sơ đó.</p>
+        <p>Đọc bằng Vault resolver của workload hiện tại; cache tối đa 60 giây có thể được dùng. Phép kiểm không gọi Provider, không cấp authority và không chứng minh Provider chấp nhận credential. Xác nhận owner đã cung cấp vẫn được giữ trong hồ sơ; response này chưa đối chiếu hồ sơ đó.</p>
       </div>` : credential?.status === 'NOT_CHECKED'
     && credential.code === 'EXACT_SELECTED_CREDENTIAL_OWNER_WORKFLOW_REQUIRED'
     ? `<div class="note warn" id="credential-diagnostics-gap">
@@ -785,7 +799,7 @@ function pageSend() {
       <div class="actions"><button class="btn danger" data-act="mut" data-op="CANCEL" ${dis()}>09 CANCEL</button></div>
     </div>` : '<div class="card"><p>Chưa chọn phiên — sang <a href="#session" data-act="go" data-page="session">Bước 3</a>.</p></div>';
   return `<div class="page-head"><h2>Bước 4 · Send và tiếp tục từng bước</h2><p class="muted">Mỗi mutation cần <code>send_once = ${esc(ref || '<12 ký tự đầu phiên>')}:&lt;OPERATION&gt;</code>, tiêu thụ một lần. Đây là chống bấm nhầm, không phải authorization/approval.</p></div>
-  <div class="note warn">Environment <b>${esc(st.vars.installation_environment)}</b> theo cấu hình tenant; endpoint eIDCA Owner <b>${esc(S.meta.evidence.runtime?.providerEndpoint || '')}</b>. Nhãn TEST của Docker không đổi môi trường Provider. Provider/CA thật có thể phát sinh phí. Không Send nếu chưa được quyền thực hiện giao dịch.</div>
+  <div class="note warn">${checkedProviderRouteNote(st)} Nhãn TEST của Docker không đổi môi trường Provider. Provider/CA thật có thể phát sinh phí. Không Send nếu chưa được quyền thực hiện giao dịch.</div>
   <div class="cols"><div>${left}</div><div>${sessionPanel()}${responsePanel()}</div></div>`;
 }
 
