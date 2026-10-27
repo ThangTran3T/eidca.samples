@@ -1,5 +1,7 @@
-param([Parameter(Mandatory=$true)][ValidateSet('PDF','CMS','XML')][string]$Format,[Parameter(Mandatory=$true)][string]$Artifact,[Parameter(Mandatory=$true)][string]$Original,[Parameter(Mandatory=$true)][string]$Leaf,[Parameter(Mandatory=$true)][string]$TrustedRoots,[Parameter(Mandatory=$true)][string]$Intermediates,[Parameter(Mandatory=$true)][string]$Crls,[string]$PdfBoxJar=(Join-Path $PSScriptRoot 'verify/pdfbox-app-3.0.8.jar'),[string]$JavaHome=$env:JAVA_HOME)
+param([Parameter(Mandatory=$true)][ValidateSet('PDF','CMS','XML')][string]$Format,[Parameter(Mandatory=$true)][string]$Artifact,[Parameter(Mandatory=$true)][string]$Original,[Parameter(Mandatory=$true)][string]$Leaf,[Parameter(Mandatory=$true)][string]$TrustedRoots,[Parameter(Mandatory=$true)][string]$Intermediates,[Parameter(Mandatory=$true)][string]$Crls,[string]$PdfBoxJar,[string]$JavaHome=$env:JAVA_HOME)
 $ErrorActionPreference='Stop'
+# Windows PowerShell -File binds parameter defaults before PSScriptRoot is available.
+if(!$PdfBoxJar){$PdfBoxJar=Join-Path $PSScriptRoot 'verify/pdfbox-app-3.0.8.jar'}
 if(!$JavaHome){throw 'Set JAVA_HOME to an installed JDK21; no automatic trust installation.'}
 $expected='768847238f683568507bf73570a2b6fedcbe58b25c7b4f97fba536ba110b290fe96ba065aed58629d41fb94857d76bc1978c2f31d294b553c69f287f71ee9600'
 if((Get-FileHash -LiteralPath $PdfBoxJar -Algorithm SHA512).Hash.ToLowerInvariant() -ne $expected){throw 'Pinned Apache PDFBox3.0.8 checksum mismatch'}

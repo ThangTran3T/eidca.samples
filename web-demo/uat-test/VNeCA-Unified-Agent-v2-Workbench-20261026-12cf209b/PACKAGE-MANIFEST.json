@@ -228,8 +228,8 @@
                   },
                   {
                       "path":  "verify-result.ps1",
-                      "sha256":  "3512ae3424abb31abf966314ed6d702e2cf176bfb9c1a8cbbb5c457660c8dec3",
-                      "bytes":  2324
+                      "sha256":  "89d491308138b9ff8d2fb5bae5bc5ee16cd0fa8d30b5d0a03f1c16ad1a07dbaf",
+                      "bytes":  2459
                   }
               ],
     "secretsIncluded":  0,
